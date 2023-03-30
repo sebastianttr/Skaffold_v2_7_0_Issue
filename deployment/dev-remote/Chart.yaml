@@ -1,0 +1,10 @@
+apiVersion: v2
+version: 1.0.0
+appVersion: "1.0.0"
+name: workflow-service
+description: A Helm chart for Q1 Node TS Boilerplate
+
+dependencies:
+  - name: common
+    version: 1.0.0
+    repository: https://gitlab.quanticfinancial.com/api/v4/projects/50/packages/helm/stable
