@@ -7,6 +7,7 @@ import config from "../config";
 import BlobService from "./BlobService";
 import {model, Schema, } from "mongoose";
 import {WorkflowStateModel, WorkflowStates} from "../model/WorkflowStateModel";
+import {incoming, KafkaIncomingRecord} from "../helper/KafkaIncoming";
 
 const workflowStartUserSchema = new Schema<WorkflowStateModel>({
     id: String,                 // workflow id ... to keep track of the process -> generate a UUID
@@ -25,10 +26,7 @@ export default class WorkflowService{
     private kafkaMessageService: KafkaMessagingService = Inject(KafkaMessagingService)
     private blobService: BlobService = Inject(BlobService)
 
-
-    constructor() {
-
-    }
+    constructor() { }
 
     fetchVariablesOverHTTP = (options: any) => new Promise<any>((resolve) => {
         resolve("fetchValue")
@@ -37,6 +35,12 @@ export default class WorkflowService{
     fetchVariablesOverKafka = (options: any) => new Promise<any>((resolve) => {
         resolve("fetchValue")
     });
+
+    @incoming("dev.blobtest.out")
+    private workflowNotifications(message: KafkaIncomingRecord) {
+        const workFlowProcess: WorkFlowProcess = JSON.parse(message.value)
+        Log.info("Process: " + workFlowProcess.processID)
+    }
 
     startProcess = async (workflowStartModel: WorkflowStartModel) => {
         // define states
