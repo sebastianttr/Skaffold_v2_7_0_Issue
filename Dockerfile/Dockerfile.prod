@@ -1,0 +1,28 @@
+# Part 1: Build Staging part
+# FROM node:17-slim
+FROM node:17-slim as build
+WORKDIR /app
+
+COPY package.json .
+COPY tsconfig.json .
+RUN  npm install  && npm install typescript -g
+
+COPY . .
+
+RUN npm run build
+
+# Part 2: Running Service Contaier from staging part
+FROM node:17-slim
+ENV NODE_ENV=production
+WORKDIR /app
+COPY package.json ./
+
+RUN mkdir -p ./uploads/
+
+RUN npm install
+COPY --from=build /app/dist ./dist
+
+CMD npm start
+
+
+

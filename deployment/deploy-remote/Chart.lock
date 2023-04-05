@@ -1,0 +1,6 @@
+dependencies:
+- name: common
+  repository: https://gitlab.quanticfinancial.com/api/v4/projects/50/packages/helm/stable
+  version: 1.0.0
+digest: sha256:faf914118cc2615277baea689d73011091b726db3a4352abb01ceecd0a107376
+generated: "2023-01-05T16:30:09.6247657+01:00"

@@ -1,0 +1,27 @@
+variables:
+  APP_NAME: node-ts-boilerplate
+  VERSION: "1.0.0"
+  TAG_LATEST: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:latest
+  TAG_COMMIT: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_TAG
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://localhost:2375
+
+
+build-container:
+   stage: build
+   image: docker:stable
+   services:
+     - docker:stable-dind
+   script:
+     - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+     - docker build -t $TAG_LATEST -f Dockerfile/Dockerfile .
+     - docker push $TAG_LATEST
+
+deploy:
+  stage: deploy
+  image: alpine/helm:3.2.1
+  script:
+    - helm repo add --username deploy_token --password $DEPLOY_TOKEN helm-common-chart https://gitlab.quanticfinancial.com/api/v4/projects/50/packages/helm/stable
+    - helm dep up ./deployment/deploy-remote/
+    - helm upgrade -i $APP_NAME ./deployment/deploy-remote/ --namespace development

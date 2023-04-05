@@ -1,0 +1,17 @@
+FROM node:17-slim
+
+WORKDIR /app
+
+COPY . .
+# Copy package.json and install dependencies
+RUN npm install
+RUN npm run build
+
+# Copy rest of the application csource code
+COPY . .
+
+RUN mkdir "uploads"
+
+# Run index.ts
+ENTRYPOINT ["npm", "run", "dev"]
+

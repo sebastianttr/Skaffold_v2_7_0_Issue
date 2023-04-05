@@ -1,0 +1,94 @@
+apiVersion: skaffold/v2beta19
+kind: Config
+build:
+  tagPolicy:
+    sha256: { }
+  local:
+    push: false
+  artifacts:
+    - image: local/workflow-service-dev
+      sync:
+        infer:
+          - '**/*.js'
+          - '**/*.ts'
+      docker:
+        dockerfile: Dockerfile/Dockerfile
+
+portForward:
+  - resourceType: deployment
+    resourceName: q1-workflow-service
+    namespace: development #q1-dev
+    port: 3000
+    localPort: 3000
+
+deploy:
+  helm:
+    releases:
+      - name: workflow-service-dev
+        chartPath: deployment/dev-remote
+        artifactOverrides:
+          image: local/workflow-service-dev
+        imageStrategy:
+          helm:
+            explicitRegistry: true
+
+profiles:
+  # use the cloudbuild profile to build images using Google Cloud Build
+  - name: clusterbuild
+    build:
+      artifacts:
+        - image: gitlab.quanticfinancial.com:5050/microservice/q1-workflow-service/dev
+          sync:
+            infer:
+              - '**/*.js'
+              - '**/*.ts'
+              - 'config.ts'
+              - 'seeding.json'
+          kaniko:
+            cache:
+              repo: gitlab.quanticfinancial.com:5050/microservice/q1-workflow-service/dev/cache
+            dockerfile: ./Dockerfile/Dockerfile.dev
+      cluster:
+        namespace: kaniko
+        nodeSelector:
+          "kubernetes.io/os": linux
+          "kaniko": "true"
+        dockerConfig:
+          secretName: gitlab-secret
+          #path: ~/.docker/config.ts
+    deploy:
+      helm:
+        releases:
+          - name: workflow-service-dev
+            chartPath: deployment/dev-remote
+            artifactOverrides:
+              image: gitlab.quanticfinancial.com:5050/microservice/q1-workflow-service/dev
+            imageStrategy:
+              helm:
+                explicitRegistry: true
+  - name: stagingbuild
+    build:
+      artifacts:
+        - image: gitlab.quanticfinancial.com:5050/microservice/q1-workflow-service/staging
+          kaniko:
+            cache:
+              repo: gitlab.quanticfinancial.com:5050/microservice/q1-workflow-service/staging/cache
+            dockerfile: ./Dockerfile
+      cluster:
+        dockerConfig:
+          secretName: gitlab-secret
+        namespace: kaniko
+        nodeSelector:
+          kaniko: "true"
+          kubernetes.io/os: linux
+    deploy:
+      helm:
+        releases:
+          - name: workflow-service
+            chartPath: deployment/staging
+            artifactOverrides:
+              image: gitlab.quanticfinancial.com:5050/microservice/q1-workflow-service/staging
+            namespace: staging
+            imageStrategy:
+              helm:
+                explicitRegistry: true

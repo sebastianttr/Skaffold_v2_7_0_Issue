@@ -1,0 +1,6 @@
+dependencies:
+- name: common
+  repository: file://../../../../kubernetes/helm-common-charts
+  version: 1.0.0
+digest: sha256:e5c30209bc364808f7c9f57c891f779cf9dd156b9c58d7982198f932903369a0
+generated: "2022-12-15T15:18:07.577077+01:00"

@@ -1,0 +1,8 @@
+{
+    "variables": {
+        "myVar1": {
+            "protocol": 0,
+            "options": {}
+        }
+    }
+}
