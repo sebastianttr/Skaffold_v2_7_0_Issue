@@ -1,7 +1,7 @@
 apiVersion: v2
 version: 1.0.0
 appVersion: "1.0.0"
-name: workflow-service-dev
+name: workflow-service
 description: A Helm chart for Q1 Workflow Service
 
 dependencies:

@@ -14,7 +14,7 @@ image:
 ports:
   - containerPort: 3000
 
-fullnameOverride: q1-workflow-service-dev
+fullnameOverride: q1-workflow-service
 
 nodeSelector:
   "kubernetes.io/os": linux

@@ -11,6 +11,7 @@ interface KafkaIncomingRecord {
     topic: string
 }
 
+const defaultBuffer = (buffer: Buffer) => (buffer) ? buffer : Buffer.from("")
 
 // Incoming decorator
 function incoming(topic: string){
@@ -21,23 +22,27 @@ function incoming(topic: string){
     ) {
         // get the kafka messaging service and the kafka consumer
         const kafkaMessagingService:KafkaMessagingService = Inject(KafkaMessagingService)
-        const consumer = kafkaMessagingService.kafka.consumer({groupId: packageJSON.name })
+        const consumer = kafkaMessagingService.kafka.consumer({
+            groupId: packageJSON.name,
+            rebalanceTimeout: 4000
+        })
 
         // connect to consumer
         consumer.connect()
             .then(async () => {
                 // subscribe to the topic
-                await consumer.subscribe({ topics: [topic], fromBeginning: true, })
+                await consumer.subscribe({ topics: [topic], fromBeginning: true,})
                 Log.info("Subscribed")
                 await consumer.run({
                     // for each message, send it back to the function.
                     eachMessage: async ({ topic, partition, message, heartbeat, pause }) => {
-                        Log.info("got something")
+                        // Log.info("got something")
+                        message.key = defaultBuffer(message.key)
+                        message.value = defaultBuffer(message.value)
 
-                        let messageValue = message.value.toString()
+                        let messageValue = message?.value.toString()
                             .replace(/\\/g, '')
-                            .replace(/^\"|\"$/g,'')
-
+                            .replace(/^\"|\"$/g,'') ?? ""
 
                         const incomingRecord: KafkaIncomingRecord = {
                             key: message.key.toString(),
@@ -54,7 +59,8 @@ function incoming(topic: string){
                         descriptor.value("Test");
                     },
                     partitionsConsumedConcurrently: 10,
-                    autoCommitThreshold: 100
+                    autoCommitThreshold: 100,
+
                 })
             })
     }

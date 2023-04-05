@@ -5,14 +5,14 @@ import {WorkFlowProcess, WorkflowStartModel} from "../model/WorkflowStartModel";
 import {VariableRequestProtocol, VariablesRequestModel} from "../model/VariablesRequestModel";
 import config from "../config";
 import BlobService from "./BlobService";
-import {model, Schema, } from "mongoose";
+import {model, Schema,} from "mongoose";
 import {WorkflowStateModel, WorkflowStates} from "../model/WorkflowStateModel";
 import {incoming, KafkaIncomingRecord} from "../helper/KafkaIncoming";
 
 const workflowStartUserSchema = new Schema<WorkflowStateModel>({
     id: String,                 // workflow id ... to keep track of the process -> generate a UUID
     currentState: String,                // uid from frontend
-    currentProcessId: String,          // messageID from frontend
+    currentProcessId: [String],          // messageID from frontend
     timestamp: Number,
     processes: [],  // list of processes. where we define the next process and the parameters of the process.
     params: Object
@@ -20,10 +20,12 @@ const workflowStartUserSchema = new Schema<WorkflowStateModel>({
 
 const WorkflowState = model<WorkflowStateModel>("workflow_states",workflowStartUserSchema);
 
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
+
 @injectable()
 export default class WorkflowService{
 
-    private kafkaMessageService: KafkaMessagingService = Inject(KafkaMessagingService)
+    private static kafkaMessageService: KafkaMessagingService = Inject(KafkaMessagingService)
     private blobService: BlobService = Inject(BlobService)
 
     constructor() { }
@@ -36,10 +38,64 @@ export default class WorkflowService{
         resolve("fetchValue")
     });
 
-    @incoming("dev.blobtest.out")
-    private workflowNotifications(message: KafkaIncomingRecord) {
+    @incoming("dev.workflow.service")
+    private async workflowNotifications(message: KafkaIncomingRecord) {
         const workFlowProcess: WorkFlowProcess = JSON.parse(message.value)
-        Log.info("Process: " + workFlowProcess.processID)
+
+        Log.info("Done with processID " + workFlowProcess.processID)
+
+        const updatedWorkflowState: WorkflowStateModel = await WorkflowState.findOne(
+            {id: workFlowProcess.id}        // workFlow id not process.id
+        )
+
+        // update the state.
+        if(workFlowProcess.next.length){
+            // get the current workflow process
+
+            // update the current processes
+            updatedWorkflowState.currentProcessId.reduce((acc,value) => {
+                // if current value is the process, take it out and replace it with the next processes
+                if(value == workFlowProcess.processID){
+                    acc.push(...(workFlowProcess.next))
+                    return acc;
+                }
+
+                // else push the normal values
+                acc.push(value)
+                return acc;
+            },[])
+
+            WorkflowState.updateOne({id: workFlowProcess.id}, updatedWorkflowState)
+
+            // get the next process.
+            const nextProcesses = updatedWorkflowState.processes.filter((process: WorkFlowProcess) => process.id != workFlowProcess.id)
+
+            // send some messages back to user ...
+            // SOCKET IO STUFF HERE
+           await delay(2000)
+
+            // send that process to the next workflow element
+
+            for(const nextProcess of nextProcesses){
+                WorkflowService.sendProcessMessageOverKafka(nextProcess)
+            }
+        }
+        else {
+            // we are done.
+            Log.info("Workflow done")
+
+            // set the status of the workflow to done.
+            updatedWorkflowState.currentProcessId.filter(value => value == workFlowProcess.processID)
+            updatedWorkflowState.currentState = WorkflowStates.DONE;
+            WorkflowState.updateOne({id: workFlowProcess.id}, updatedWorkflowState)
+
+
+            // send some messages back to user ...
+            // SOCKET IO STUFF HERE
+
+
+        }
+
     }
 
     startProcess = async (workflowStartModel: WorkflowStartModel) => {
@@ -76,7 +132,7 @@ export default class WorkflowService{
             await this.blobService.storeBlob(blobName, JSON.stringify(variables))
 
             // change the workflow processes variable to only have the blob name
-            process.variables =  blobName;
+            process.variables = blobName;
 
             // add process to workflow processes array
             workflowProcesses.push(process)
@@ -88,32 +144,41 @@ export default class WorkflowService{
             messageID: workflowStartModel.messageID,                            // MessageID
             UID: workflowStartModel.UID,                                        // UID
             timestamp: Date.now(),                                              // Record the current timestamp
-            currentProcessId: workflowStartModel.processes[0].processID,        // first process start
+            currentProcessId: [workflowStartModel.processes[0].processID],        // first process start
             currentState: WorkflowStates.RUN,                                   // start with a running state
             processes: workflowProcesses,                                       // processes -> variables are removed, only blob name instead
             params: workflowStartModel.params                                   // params from workflowStartModel
         }
 
         // save the state to the database
-        new WorkflowState(workFlowState).save()
-            .catch((e) => {
-                Log.error(e)
-            });
+        await WorkflowState.findOneAndUpdate(
+            {},
+            workFlowState,
+            {
+                upsert: true,
+                new: true,
+                setDefaultsOnInsert: true
+            }
+        )
 
         // once in the blob storage and DB, send all the necessary information over kafka to service
-        this.kafkaMessageService.send(
-            JSON.stringify(workflowStartModel.processes[0]),
-            "dev.file.upload.firm-service",
+        WorkflowService.sendProcessMessageOverKafka(workflowProcesses[0])
+        //Log.info("Starting the process")*/
+    }
+
+    private static sendProcessMessageOverKafka = (process: WorkFlowProcess) => {
+        WorkflowService.kafkaMessageService.send(
+            JSON.stringify(process),
+            config.processMapping[process.processName].topic,
             "",
             0,
             {})
             .then(r => {
-                Log.info("Sent kafka message")
+                //Log.info("Sent kafka message")
             })
             .catch(e => {
                 Log.info("Error!")
                 Log.info(e.message)
             })
-        //Log.info("Starting the process")*/
     }
 }

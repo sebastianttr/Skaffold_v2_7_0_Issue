@@ -11,7 +11,8 @@
     "build": "tsoa spec-and-routes && tsc",
     "swagger": "tsoa spec",
     "dev": "concurrently \"nodemon\"  \"nodemon -x tsoa spec-and-routes\"",
-    "lint": "eslint . --fix"
+    "lint": "eslint . --fix",
+    "dev-remote": " skaffold dev -n development -p clusterbuild --platform linux/arm64 --port-forward "
   },
   "author": "Sebastian Tatar sebi.tatar2@gmail.com",
   "license": "ISC",

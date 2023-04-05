@@ -3,6 +3,7 @@ import {container, InjectionToken} from "tsyringe";
 
 export interface IConfig {
     variables: { [key:string]: any }    // 0 = http, 1 = kafka
+    processMapping:  { [key:string]: any }
 }
 
 export function Inject<Type>(dependency: InjectionToken<Type>) : Type {

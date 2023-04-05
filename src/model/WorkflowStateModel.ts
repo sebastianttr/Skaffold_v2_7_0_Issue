@@ -9,7 +9,7 @@ enum WorkflowStates {
 
 interface WorkflowStateModel extends WorkflowStartModel{       // this will be stored in the mongo database ... it remembers te current state of the workflow
     currentState: WorkflowStates,   // Workflow states
-    currentProcessId: string,
+    currentProcessId: string[],
 }
 
 export {WorkflowStateModel, WorkflowStates}

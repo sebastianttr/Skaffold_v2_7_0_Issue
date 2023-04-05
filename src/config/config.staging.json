@@ -4,5 +4,13 @@
             "protocol": 0,
             "options": {}
         }
+    },
+    "processMapping": {
+        "Workflow Element 1": {
+            "topic": "dev.workflow.element1"
+        },
+        "Workflow Element 2": {
+            "topic": "dev.workflow.element2"
+        }
     }
 }
