@@ -17,4 +17,6 @@ export class WorkflowController extends Controller {
         this.workflowService.startProcess(startModel)
         return "Starting process!";
     }
+
+
 }

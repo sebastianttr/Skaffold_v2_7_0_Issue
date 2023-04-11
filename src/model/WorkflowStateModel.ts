@@ -1,4 +1,4 @@
-import {WorkFlowProcess, WorkflowStartModel} from "./WorkflowStartModel";
+import {WorkFlowProcessModel, WorkflowStartModel} from "./WorkflowStartModel";
 
 enum WorkflowStates {
     IDLE,
