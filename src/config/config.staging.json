@@ -11,6 +11,9 @@
         },
         "Workflow Element 2": {
             "topic": "dev.workflow.element2"
+        },
+        "Workflow Element 3": {
+            "topic": "dev.workflow.element3"
         }
     }
 }

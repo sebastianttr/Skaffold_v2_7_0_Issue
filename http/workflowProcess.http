@@ -1,0 +1,4 @@
+GET /api/v1/workflow/process HTTP/1.1
+Host: localhost:3001
+uid: some-uid
+processID: process-id-1

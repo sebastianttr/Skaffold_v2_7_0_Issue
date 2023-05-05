@@ -1,0 +1,41 @@
+POST /api/v1/workflow/startProcess HTTP/1.1
+Host: localhost:3001
+Content-Type: application/json
+Content-Length: 933
+
+{
+  "id": "uuid",
+  "UID": "some-uid",
+  "messageID": "some-messageID",
+  "start":["process-id-1","process-id-2"],
+  "params": {},
+  "processes": [
+    {
+      "processID": "process-id-1",
+      "processName":"Workflow Element 1",
+      "next": ["process-id-3"],
+      "variables": {
+        "myVar1":"1",
+        "myVar2":""
+      }
+    },
+    {
+      "processID": "process-id-2",
+      "processName":"Workflow Element 2",
+      "next": ["process-id-3"],
+      "variables": {
+        "myVar53":"1",
+        "myVar52":""
+      }
+    },
+    {
+      "processID": "process-id-3",
+      "processName":"Workflow Element 3",
+      "next": [],
+      "variables": {
+        "myVar98":"1",
+        "myVar99":"1"
+      }
+    }
+  ]
+}

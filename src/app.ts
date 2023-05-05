@@ -14,36 +14,41 @@ import {RegisterRoutes} from "../dist/routes";
 const app = express();
 const port = 3000;
 
+
 const databaseService: DatabaseService = Inject(DatabaseService)
 const kafkaService: KafkaMessagingService = Inject(KafkaMessagingService)
-const blobService: BlobService = Inject(BlobService)
+const blobService: BlobService = Inject(BlobService);
 
-app.use(cors({
-        origin: '*',
-        optionsSuccessStatus: 200,
-    })
-);
+(async () => {
+    app.use(cors({
+            origin: '*',
+            optionsSuccessStatus: 200,
+        })
+    );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(bodyParser.urlencoded({
-    extended: true,
-    limit: '500mb',
-    parameterLimit: 100000
-}));
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: false }));
+    app.use(cookieParser());
+    app.use(bodyParser.urlencoded({
+        extended: true,
+        limit: '500mb',
+        parameterLimit: 100000
+    }));
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.use(bodyParser.json({
-    limit: '500mb'
-}));
+    app.use(bodyParser.json({
+        limit: '500mb'
+    }));
 
-app.use(express.static("public"));
+    app.use(express.static("public"));
 
-RegisterRoutes(app);
+    RegisterRoutes(app);
 
-app.listen(port, () => {
-  Log.info(`Express is listening at http://localhost:${port}`);
-});
+    app.listen(port, () => {
+        Log.info(`Express is listening at http://localhost:${port}`);
+    });
+})()
+
+
 

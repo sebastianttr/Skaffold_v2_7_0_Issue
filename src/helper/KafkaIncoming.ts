@@ -36,6 +36,8 @@ function incoming(topic: string){
                 await consumer.run({
                     // for each message, send it back to the function.
                     eachMessage: async ({ topic, partition, message, heartbeat, pause }) => {
+                        consumer.pause([{ topic }])
+
                         // Log.info("got something")
                         message.key = defaultBuffer(message.key)
                         message.value = defaultBuffer(message.value)
@@ -52,11 +54,18 @@ function incoming(topic: string){
                             topic: topic,
                         };
 
-                        descriptor.value(incomingRecord);
+
+                        try{
+                            await descriptor.value(incomingRecord);
+                        }
+                        catch (e: any) {
+                            Log.error(e.stack)
+                        }
+                        consumer.resume([{ topic }])
                     },
                     eachBatch: async ({ batch, resolveOffset, heartbeat, isRunning, isStale }) => {
                         Log.info("got something batched")
-                        descriptor.value("Test");
+                        await descriptor.value("Test");
                     },
                     partitionsConsumedConcurrently: 10,
                     autoCommitThreshold: 100,

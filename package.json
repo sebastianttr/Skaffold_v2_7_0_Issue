@@ -44,6 +44,7 @@
     "mongo": "^0.1.0",
     "mongod": "^2.0.0",
     "mongoose": "^6.10.0",
+    "object-sizeof": "^2.6.1",
     "reflect-metadata": "^0.1.13",
     "swagger-ui-express": "^4.6.1",
     "tracer": "^1.1.6",

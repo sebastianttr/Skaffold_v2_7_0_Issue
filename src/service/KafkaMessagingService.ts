@@ -1,7 +1,9 @@
 import {IHeaders, Kafka, logLevel, Message, Partitioners, Producer} from "kafkajs"
 import * as dotenv from 'dotenv'
 import {singleton} from "tsyringe";
-import {Log} from "../common"
+import {Inject, Log} from "../common"
+import packageJSON from "../../package.json";
+import {KafkaIncomingRecord} from "../helper/KafkaIncoming";
 
 
 dotenv.config()
@@ -69,6 +71,7 @@ class KafkaMessaging {
             messages: messages,
         })
     }
+
 }
 
 export default KafkaMessaging;
