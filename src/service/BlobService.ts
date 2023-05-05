@@ -61,7 +61,24 @@ export class BlobService {
         resolve(contentBuffer.toString())
     })
 
-    getBlobContentBuffer = (blobName: string) => new Promise<Buffer>(async (resolve, reject) => {
+    getBlobContentBuffer = (blobName: string):Promise<Buffer> => this.blobContainer.getBlobClient(blobName).download()
+        .then(stream => {
+            const content: NodeJS.ReadableStream = stream.readableStreamBody
+            const chunks = [];
+            let buffer: Buffer;
+
+            content.on('data', (data) => {
+                chunks.push(data instanceof Buffer ? data : Buffer.from(data));
+            });
+            content.on('end', () => {
+                buffer = Buffer.concat(chunks);
+            });
+            content.on('error', () => {});
+
+            return buffer;
+        })
+
+    /*getBlobContentBuffer = (blobName: string) => new Promise<Buffer>(async (resolve, reject) => {
         // download the data, convert the Uint8Array into a buffer
         const downloadResponse = (await this.blobContainer.getBlobClient(blobName).download()).readableStreamBody
 
@@ -78,7 +95,7 @@ export class BlobService {
         });
 
         resolve(downloaded)
-    })
+    })*/
 
     // https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blobs-list-javascript
     getBlobs = (maxPageSize:number = 100) => new Promise<string[]>(async (resolve,reject) => {

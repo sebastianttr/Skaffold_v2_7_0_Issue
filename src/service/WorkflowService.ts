@@ -8,8 +8,10 @@ import BlobService from "./BlobService";
 import {model, Schema,} from "mongoose";
 import {WorkflowStateModel, WorkflowStates} from "../model/WorkflowStateModel";
 import {incoming, KafkaIncomingRecord} from "../helper/KafkaIncoming";
-import {WorkflowProcesses, WorkflowState, WorkflowStatus} from "../schema/WokflowSchemas";
 import objectSize from "object-sizeof";
+import {WorkflowStatus} from "../entity/WorkflowStatus";
+import {WorkflowState} from "../entity/WorkflowState";
+import {WorkflowProcesses} from "../entity/WorkflowProcess";
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -194,6 +196,10 @@ export default class WorkflowService{
     // TODO: When there is no next property, start the first process in the list.
     startProcess = async (workflowStartModel: WorkflowStartModel) => {
 
+        const blobContent = await WorkflowService.blobService.getBlobContent("var_uuid_process-id-1")
+
+        Log.info("Blob content: " + blobContent)
+
         // get all the variables -> fetch
         // go over all the variables from the Workflow Start Model
         for(const process of workflowStartModel.processes){
@@ -272,6 +278,7 @@ export default class WorkflowService{
 
     private static async preprocessVariables(process: WorkFlowProcessModel): Promise<any> {
         let variables = {};
+        // get it in a different format for easier processing
         const processVariablesName: { key: string; value: unknown; }[] = Object.entries(process.variables).map(entry => ({key: entry[0], value: entry[1]}))
 
         for await (const entry of processVariablesName){

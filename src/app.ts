@@ -10,6 +10,7 @@ import {DatabaseService} from "./service/DatabaseService";
 import KafkaMessagingService from "./service/KafkaMessagingService";
 import BlobService from "./service/BlobService";
 import {RegisterRoutes} from "../dist/routes";
+import data from "./config";
 
 const app = express();
 const port = 3000;
@@ -43,11 +44,17 @@ const blobService: BlobService = Inject(BlobService);
 
     app.use(express.static("public"));
 
-    RegisterRoutes(app);
+    // connect to database:
+    databaseService.connectToMongo().then(() => {
+        Log.info("Registering routes!")
+        RegisterRoutes(app);
 
-    app.listen(port, () => {
-        Log.info(`Express is listening at http://localhost:${port}`);
-    });
+        app.listen(port, () => {
+            Log.info(`Express is listening at http://localhost:${port}`);
+        });
+    })
+
+
 })()
 
 

@@ -1,11 +1,9 @@
 import {Controller} from "@tsoa/runtime";
-import {Get, Post, Request, Route} from "tsoa";
+import {Get, Post, Put, Request, Route} from "tsoa";
 import WorkflowService from "../service/WorkflowService";
 import {Inject, Log} from "../common";
 import {WorkflowStartModel} from "../model/WorkflowStartModel";
 import express from "express";
-import {WorkflowStateModel, WorkflowStates} from "../model/WorkflowStateModel";
-import {WorkflowProcesses, WorkflowState} from "../schema/WokflowSchemas";
 
 @Route("api/v1/workflow")
 export class WorkflowController extends Controller {
@@ -29,7 +27,7 @@ export class WorkflowController extends Controller {
         return WorkflowService.getWorkflowProcesses(uid);
     }
 
-    @Post("startProcess")
+    @Post()
     public startProcess(@Request() req: express.Request): string {
         const startModel: WorkflowStartModel = req.body;
         this.workflowService.startProcess(startModel)

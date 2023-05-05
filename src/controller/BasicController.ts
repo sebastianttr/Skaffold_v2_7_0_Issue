@@ -1,4 +1,4 @@
-import { Get, Path, Route , Request} from "tsoa";
+import {Get, Path, Route, Request, Delete} from "tsoa";
 import {Inject, Log} from "../common";
 import {Controller} from "@tsoa/runtime";
 import WorkflowService from "../service/WorkflowService";
@@ -10,7 +10,7 @@ export class BasicController extends Controller {
     private workflowService: WorkflowService = Inject(WorkflowService)
     private blobService: BlobService = Inject(BlobService)
 
-    @Get("deleteBlobs")
+    @Delete("blobs")
     public deleteAllBlobs(@Request() req: Express.Request): string{
         this.blobService.getBlobs().then(blobs => {
             this.blobService.deleteBlobs(blobs)

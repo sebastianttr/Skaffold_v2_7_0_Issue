@@ -1,5 +1,6 @@
 import {WorkFlowProcessModel, WorkflowStartModel} from "./WorkflowStartModel";
-import {WorkflowProcesses, WorkflowState} from "../schema/WokflowSchemas";
+import {WorkflowState} from "../entity/WorkflowState";
+import {WorkflowProcesses} from "../entity/WorkflowProcess";
 
 enum WorkflowStates {
     IDLE,

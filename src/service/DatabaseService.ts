@@ -3,7 +3,7 @@ import dotenv from "dotenv"
 import * as mongoose from "mongoose";
 import {Log} from "../common";
 import {Exception} from "tsoa";
-import {model, Schema} from "mongoose";
+import {model, Mongoose, Schema} from "mongoose";
 
 dotenv.config()
 
@@ -21,11 +21,10 @@ mongoose.set('strictQuery', false);
 export class DatabaseService{
 
     constructor() {
-        this.connectToMongo();
+        //this.connectToMongo();
     }
 
-    private connectToMongo = () => {
-        mongoose.connect(connectionString)
+    connectToMongo = (): Promise<void> => mongoose.connect(connectionString)
             .then(async () => {
                 Log.info("Successfully established connection to MongoDB!")
             })
@@ -33,5 +32,5 @@ export class DatabaseService{
                 Log.error("Error connection to mongo db!")
                 Log.error(e.name + " : " + e.message)
             })
-    }
+
 }

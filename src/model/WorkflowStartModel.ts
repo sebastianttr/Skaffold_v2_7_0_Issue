@@ -1,6 +1,6 @@
 import {WorkflowStates} from "./WorkflowStateModel";
-import {WorkflowProcesses} from "../schema/WokflowSchemas";
 import {Query} from "mongoose";
+import {WorkflowProcesses} from "../entity/WorkflowProcess";
 
 
 interface WorkflowProcessOutputModel{

@@ -54,7 +54,6 @@ function incoming(topic: string){
                             topic: topic,
                         };
 
-
                         try{
                             await descriptor.value(incomingRecord);
                         }

@@ -25,7 +25,9 @@ class KafkaMessaging {
 
         // Can connect async ... low chance of it sending message on empty producer...
         if(!this.producer)
-            this.connect()
+            this.connect().then(() => {
+                Log.info("Connected to Kafka Broker!")
+            })
 
     }
 
@@ -45,7 +47,6 @@ class KafkaMessaging {
             await this.producer.connect();
             this.connected = true;
             this.connecting = false;
-            Log.info("Kafka Successfully connected.");
         }
     }
 
