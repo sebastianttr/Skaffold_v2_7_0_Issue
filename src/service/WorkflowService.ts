@@ -135,7 +135,7 @@ export default class WorkflowService{
 
                 // a small delay so it is not too fast
                 // TODO: In Production or Staging, remove delay.
-                await delay(2000);
+                await delay(500);
 
 
                 // if all the processes are done and there is something after those processes
