@@ -1,5 +1,12 @@
-import { console } from "tracer";
+import { console as Console }  from "tracer";
 import { container, InjectionToken } from "tsyringe";
+import winston from "winston";
+import {format} from "winston"
+import Transport from "winston-transport"
+import console from "console";
+
+const { combine, colorize, timestamp, printf } = format;
+
 
 export function Inject<Type>(dep: InjectionToken<Type>) : Type {
     return container.resolve(dep)
@@ -25,13 +32,44 @@ const getFormatedDate = () => {
     return `${hour}:${minute}:${seconds}`;
 }
 
-export const Log = console({
+export const LogDev = Console({
     format: [
         '({{file}}): {{message}}',
         {
-            info: `(${getFormatedDate()} - {{file}}): {{message}} `,
+            info: `(${getFormatedDate()}): {{message}} `,
             error: '({{file}}:{{line}}) {{message}}'
         }
     ],
     dateformat: 'HH:MM:ss.L',
 })
+
+class CustomTransport extends Transport {
+    constructor(opts) {
+        super(opts);
+    }
+    log(info, callback) {
+        LogDev.info(info.message);
+        callback();
+    }
+}
+
+let consoleTransport: any[] = [];
+
+if (process.env.NODE_ENV == 'production') {    // in production, we use file and winston console
+    consoleTransport.push(new winston.transports.File({ filename: 'error.log', level: 'error' }))
+    consoleTransport.push(new winston.transports.File({ filename: 'combined.log' }))
+    consoleTransport.push(new winston.transports.Console({
+        format: winston.format.simple(),
+    }))
+    // add a custom transport
+}
+else {  // for any other environment like dev, we use console logger
+    consoleTransport.push(new CustomTransport({}))
+}
+
+export const Log = winston.createLogger({
+    level: 'info',
+    format: winston.format.simple(),
+    transports: consoleTransport
+})
+

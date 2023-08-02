@@ -2,10 +2,8 @@ import {injectable} from "tsyringe";
 import {Inject, Log} from "../common";
 import KafkaMessagingService from "./KafkaMessagingService";
 import {WorkFlowProcessModel, WorkflowProcessStatusModel, WorkflowStartModel} from "../model/WorkflowStartModel";
-import {VariableRequestProtocol, VariablesRequestModel} from "../model/VariablesRequestModel";
 import config from "../config";
 import BlobService from "./BlobService";
-import {model, Schema,} from "mongoose";
 import {WorkflowStateModel, WorkflowStates} from "../model/WorkflowStateModel";
 import {incoming, KafkaIncomingRecord} from "../helper/KafkaIncoming";
 import objectSize from "object-sizeof";
@@ -100,7 +98,7 @@ export default class WorkflowService{
         Log.info("Done with this process: " + workFlowProcess.processID)
 
         // get the current process and update the state from RUN to DONE
-        let currentPersistedProcess : WorkFlowProcessModel = await WorkFlowProcessModel.findCurrentProcess(workFlowProcess.processID)
+        let currentPersistedProcess : WorkFlowProcessModel = await WorkFlowProcessModel.getProcess(workFlowProcess.processID)
 
         // get the workflow state
         let currentWorkflowState : WorkflowStateModel = await WorkflowStateModel.getWorkflowState(workFlowProcess.workflowID)
@@ -132,15 +130,16 @@ export default class WorkflowService{
                 // check if the previous processes are done.
                 const isPreviousProcessesDone: Boolean = parallelProcesses.filter(item => item.processState == WorkflowStates.DONE).length == currentPersistedProcess.next.length
 
+                // also check if there is a restart in the parameters
+                const isRestart: Boolean = workFlowProcess.params.restart == "true"
+
                 // a small delay so it is not too fast
                 // TODO: In Production or Staging, remove delay.
-                await delay(2000);
-
-                // A variable that holds the next processes to be started.
+                await delay(500);
 
 
                 // if all the processes are done and there is something after those processes
-                if(isPreviousProcessesDone){
+                if(isPreviousProcessesDone && !isRestart){
                     Log.info("Previous processes are done & there is a next")
 
                     // push the next processes into the WorkflowState
@@ -194,11 +193,7 @@ export default class WorkflowService{
     }
 
     // TODO: When there is no next property, start the first process in the list.
-    startProcess = async (workflowStartModel: WorkflowStartModel) => {
-
-        const blobContent = await WorkflowService.blobService.getBlobContent("var_uuid_process-id-1")
-
-        Log.info("Blob content: " + blobContent)
+    startWorkflow = async (workflowStartModel: WorkflowStartModel) => {
 
         // get all the variables -> fetch
         // go over all the variables from the Workflow Start Model
@@ -274,6 +269,71 @@ export default class WorkflowService{
         // send some messages back to user ...
         // TODO: SOCKET IO STUFF HERE
         //Log.info("Starting the process")*/
+    }
+
+    // restarts the process.
+    // process can only be restarted if the process is currently
+    restartProcess = async (process: WorkFlowProcessModel): Promise<string> => {
+        // get the workflow states and the process from the database
+        const workflowStateModel: WorkflowStateModel = await WorkflowStateModel.getWorkflowState(process.workflowID)
+        const processModel: WorkFlowProcessModel = await WorkFlowProcessModel.getProcess(process.processID)
+
+        // check if the do exist
+        if(workflowStateModel != null && processModel != null){
+            // check the state, only DONE and EXCEPTION can work
+            if (workflowStateModel.currentState == WorkflowStates.DONE || WorkflowStates.EXCEPTION) {
+                // get the output from the previous operations
+                let parallelProcesses: WorkFlowProcessModel[] = await WorkFlowProcessModel.getParallelProcesses(process.processID)
+
+
+                // check if there is an output variable from the previous process, if not, do not start and notify
+                const processesOutputVariables:any = WorkFlowProcessModel.hasOutputVariables(parallelProcesses)
+
+                // check if the processes have output variables on all parallel processes
+                if(processesOutputVariables.hasOutputVariables){
+                    parallelProcesses.forEach(proc => {
+                        processModel.variables = {
+                            ...processModel.variables,
+                            ...proc.variables
+                        }
+                    })
+
+
+                    // set the state to run and the params as restart
+                    processModel.processState = WorkflowStates.RUN
+                    processModel.params = JSON.stringify({"restart":"true"})
+
+                    // start the service by sending a message and save the processModel to database
+                    WorkflowService.sendProcessMessageOverKafka(processModel)
+
+                    // reset params
+                    processModel.params = undefined
+                    // when you persist, persist with the next processes too
+                    await WorkflowService.persistProcesses([processModel])
+
+                    return "Process restarting...";
+                }
+                else {
+                    // if the restarting process does not have output variables from the previous processes
+                    let returnText = "Cannot start the process because we are missing the output for the other processes: "
+
+                    processesOutputVariables.missingVariableProcess.forEach((item,index) => {
+                        returnText += item
+
+                        if(index != processesOutputVariables.missingVariableProcess.length - 1){
+                            returnText += " , "
+                        }
+                    })
+
+                    return returnText
+                }
+            }
+            else {
+                return "Cannot stop process because it is in Running or missing data needed for the process operation!"
+            }
+
+        }
+        return "Process does not exist"
     }
 
     private static async preprocessVariables(process: WorkFlowProcessModel): Promise<any> {

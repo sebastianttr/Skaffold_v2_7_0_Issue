@@ -10,7 +10,6 @@ import {DatabaseService} from "./service/DatabaseService";
 import KafkaMessagingService from "./service/KafkaMessagingService";
 import BlobService from "./service/BlobService";
 import {RegisterRoutes} from "../dist/routes";
-import data from "./config";
 
 const app = express();
 const port = 3000;
@@ -53,7 +52,6 @@ const blobService: BlobService = Inject(BlobService);
             Log.info(`Express is listening at http://localhost:${port}`);
         });
     })
-
 
 })()
 

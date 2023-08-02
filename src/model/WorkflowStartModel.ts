@@ -1,6 +1,7 @@
 import {WorkflowStates} from "./WorkflowStateModel";
 import {Query} from "mongoose";
 import {WorkflowProcesses} from "../entity/WorkflowProcess";
+import {Log} from "../common";
 
 
 interface WorkflowProcessOutputModel{
@@ -46,7 +47,7 @@ class WorkFlowProcessModel {
     output?: WorkflowProcessOutputModel;
 
     // gets the current
-    public static findCurrentProcess = (processID: string) => {
+    public static getProcess = (processID: string) => {
         return WorkflowProcesses.findOne(
             {processID: processID}
         )
@@ -55,6 +56,24 @@ class WorkFlowProcessModel {
     public static getParallelProcesses = (nextProcesses: string) => WorkflowProcesses.find(
         {next: {$in: [nextProcesses]}}
     )
+
+    public static hasOutputVariables = (processes: WorkFlowProcessModel[]) => {
+        let hasVariable:boolean = true;
+        let missingVariableProcess: string[] = []
+
+        processes.forEach((proc) => {
+
+            if(!proc.output){
+                hasVariable = false;
+                missingVariableProcess.push(proc.processID)
+            }
+        })
+
+        return {
+            hasOutputVariables: hasVariable,
+            missingVariableProcess:missingVariableProcess
+        }
+    }
 }
 
 
