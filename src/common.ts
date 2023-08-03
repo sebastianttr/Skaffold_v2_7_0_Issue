@@ -12,9 +12,8 @@ export function Inject<Type>(dep: InjectionToken<Type>) : Type {
     return container.resolve(dep)
 }
 
-const leadingZero = (num) => {
-    if(num < 10) num = '0' + num;
-    return num
+const leadingZero = (num:number):string => {
+    return (num < 10) ? '0' + num : String(num)
 }
 
 const getFormatedDate = () => {
@@ -44,11 +43,12 @@ export const LogDev = Console({
 })
 
 class CustomTransport extends Transport {
-    constructor(opts) {
+    constructor(opts:any) {
         super(opts);
     }
-    log(info, callback) {
-        LogDev.info(info.message);
+
+    log(info:any, callback: any) {
+        LogDev.info(info["message"]);
         callback();
     }
 }
