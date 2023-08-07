@@ -17,8 +17,7 @@ import {
 const workflowProcessStatusMessageSchema = new mongoose.Schema({
     statusCount: Number,                // status counter
     statusTotal: Number,                // status total -> how many steps in a process
-    messageUid: String,                 // message Uid -> needed to tell where to send it back
-    userId: String,                     // user Id -> to tell from which user it is to get user-specific data.
+
     type: String,                       // type -> DETAIL_TYPE (ADX_CALCULATION, ADX_FINISH, CDX_CALCULATION, CDX_FINISH, etc.)
     processType: String,                // process type -> what kind of process is this supposed to be. PROCESS_TYPE (ADX, CDX, SAVE, etc.)
     status: String,                      // current status: INFO, DONE, WARNING, ERROR;
@@ -29,6 +28,8 @@ const workflowProcessStatusSchema = new mongoose.Schema<WorkflowProcessStatusMod
     message: workflowProcessStatusMessageSchema,                // Workflow States
     workflowId: String,                                         // Workflow ID
     processId: String,                                          // Process ID -> From where the status message came from
+    messageUid: String,                 // message Uid -> needed to tell where to send it back
+    userId: String,                     // user Id -> to tell from which user it is to get user-specific data.
     timestamp: Date                                             // Timestamp -> data will expire at some point (Like a week.)
 });
 

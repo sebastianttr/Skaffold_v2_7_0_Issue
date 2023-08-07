@@ -10,6 +10,7 @@ import objectSize from "object-sizeof";
 import {WorkflowStatus} from "../entity/WorkflowStatus";
 import {WorkflowState} from "../entity/WorkflowState";
 import {WorkflowProcesses} from "../entity/WorkflowProcess";
+import {start} from "repl";
 
 const delay = (ms:number) => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -21,7 +22,9 @@ export default class WorkflowService{
     private static kafkaMessageService: KafkaMessagingService = Inject(KafkaMessagingService)
     private static blobService: BlobService = Inject(BlobService)
 
-    constructor() { }
+    constructor() {
+
+    }
 
 
     // get the variable over HTTP from a known microservice endpoint
@@ -64,35 +67,66 @@ export default class WorkflowService{
         // Log.info(`(${workFlowProcessStatusModel.processID} [${workFlowProcessStatusModel.message["status"]}]) ${workFlowProcessStatusModel.message["message"]}`)
 
         // set timestamp - so we can clear it out after some time
-        workFlowProcessStatusModel.timestamp = new Date(Date.now())
+        //workFlowProcessStatusModel.timestamp = new Date(Date.now())
+
+        // Remove old status messages because we cannot have statuses with the same worklflowId, processId an status count -> bad for process time estimation
+        await WorkflowService.removeOldStatuses(workFlowProcessStatusModel)
+
+        // Insert incoming status into the database
+        await WorkflowStatus.insertMany([workFlowProcessStatusModel])
+
+        //Log.info(`Process ID: ${workFlowProcessStatusModel.processId}, Workflow ID: ${workFlowProcessStatusModel.workflowId}`)
+        const processFinishTime = await WorkflowService.estimateProcessFinishTime(workFlowProcessStatusModel)
+
+        Log.info(`ETA: ${(processFinishTime / 1000).toFixed(3)} sec`)
 
         // send some messages back to user ...
         // TODO: SOCKET IO STUFF HERE
 
-        //Log.info(`Process ID: ${workFlowProcessStatusModel.processId}, Workflow ID: ${workFlowProcessStatusModel.workflowId}`)
-        Log.info("Message: " + JSON.stringify(workFlowProcessStatusModel.message))
-
-
-
-        await WorkflowStatus.insertMany([workFlowProcessStatusModel])
     }
 
-    private estimateProcessFinishTime = async (workflowId: string, processId: string) => {
+    private static removeOldStatuses = async (workflowProcessStatusModel: WorkflowProcessStatusModel) => {
+        // Important: Status counter begins with 1
+        // remove statuses that have already been in the database when a new process begins.
+        const oldStatuses: WorkflowProcessStatusModel[] = (await WorkflowStatus.find(
+            {"message.statusCount":0, workflowId: workflowProcessStatusModel.workflowId, processId: workflowProcessStatusModel.processId, messageUid: workflowProcessStatusModel.messageUid}))!
+
+        // if there is an old status with status count of 1 and the current incoming status has number 1
+        // then remove all the statuses by workflowId and processId
+        if(oldStatuses.length >= 1 && workflowProcessStatusModel.message.statusCount == 0){
+            // remove all with given workflowId and processId
+            await WorkflowStatus.remove({workflowId: workflowProcessStatusModel.workflowId, processId: workflowProcessStatusModel.processId})
+        }
+    }
+
+    private static estimateProcessFinishTime = async (workFlowProcessStatusModel: WorkflowProcessStatusModel): Promise<number> => {
         // get all statuses with workflow id and process id
-        const allWorkflowStatuses: WorkflowProcessStatusModel[] = (await WorkflowStatus.find({workflowId: workflowId, processId}))!
+        const allWorkflowStatuses: WorkflowProcessStatusModel[] = (await WorkflowStatus.find(
+            {workflowId: workFlowProcessStatusModel.workflowId,processId:  workFlowProcessStatusModel.processId, messageUid: workFlowProcessStatusModel.messageUid}))!
 
-        // calculate the average time
-        const averageProcessingTime: number = allWorkflowStatuses.reduce((acc: number, item) => {
+        // you need at least 2 status messages to be able to calculate the
+        if(allWorkflowStatuses.length >= 2){
+            const allWorkflowStatusesTimestampSorted: WorkflowProcessStatusModel[] = allWorkflowStatuses.sort((a, b) => {
+                return a.timestamp.valueOf() - b.timestamp.valueOf();
+            });
 
+            const startTime: number = allWorkflowStatusesTimestampSorted[0].timestamp.valueOf()
 
+            // calculate the average time
+            const averageTime = (allWorkflowStatusesTimestampSorted.at(-1)?.timestamp.valueOf()! - startTime) / (allWorkflowStatusesTimestampSorted.length-1)
+            const timeCount: number = allWorkflowStatusesTimestampSorted.at(-1)?.timestamp.valueOf()! - startTime;
+            const timeTotal: number = averageTime * (allWorkflowStatusesTimestampSorted.at(-1)?.message.statusTotal!)
+            const remainingTime = (timeTotal - timeCount);
 
-            return acc;
-        }, 0) / allWorkflowStatuses.length
+            //console.log("Remaining Time: " + remainingTime)
+            return remainingTime;
+        }
+        else {
+            //console.log("There is no average to be calculated.")
+            return NaN;
+        }
 
         // estimate how much longer it will take.
-
-
-
     }
 
 
@@ -239,7 +273,7 @@ export default class WorkflowService{
         // compose the messages.
         const workFlowState: WorkflowStateModel = {
             id:workflowStartModel.id,                                           // ID
-            messageId: workflowStartModel.messageId,                            // MessageID
+            messageUid: workflowStartModel.messageUid,                            // MessageID
             userId: workflowStartModel.userId,                                        // UID
             timestamp: Date.now(),                                              // Record the current timestamp
             currentProcessId: workflowStartModel.start,                         // first process start
@@ -265,7 +299,7 @@ export default class WorkflowService{
         // also assign them a state and some IDs.
         let processes: WorkFlowProcessModel[] = workflowStartModel.processes!.map(item => {
             item.workflowId = workflowStartModel.id
-            item.messageId = workflowStartModel.messageId;
+            item.messageId = workflowStartModel.messageUid;
             item.userId = workflowStartModel.userId;
 
             // check if the current item process id is part of start model start property -> assign correct state

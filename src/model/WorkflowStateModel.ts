@@ -15,7 +15,7 @@ class WorkflowStateModel implements WorkflowStartModel{       // this will be st
     currentProcessId: string[];
     userId: string;
     id: string;
-    messageId: string;
+    messageUid: string;
     params: { [p: string]: string };
     start: string[];
     timestamp: number;
@@ -28,7 +28,7 @@ class WorkflowStateModel implements WorkflowStartModel{       // this will be st
         this.currentProcessId = currentProcessId;
         this.userId = userID;
         this.id = id;
-        this.messageId = messageId;
+        this.messageUid = messageId;
         this.params = params;
         this.start = start;
         this.timestamp = timestamp;

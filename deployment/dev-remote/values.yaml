@@ -6,7 +6,7 @@ version: v1
 
 image:
   registry: gitlab.quanticfinancial.com:5050/microservice
-  repository: q1-workflow-service/dev
+  repository: q1-workflow-service-1/dev
   tag: latest
   pullPolicy: Always
   #pullPolicy: IfNotPresent
@@ -14,7 +14,7 @@ image:
 ports:
   - containerPort: 3000
 
-fullnameOverride: q1-workflow-service
+fullnameOverride:  q1-workflow-service
 
 nodeSelector:
   "kubernetes.io/os": linux
@@ -51,7 +51,7 @@ service:
   gateway: mesh-gateway-development
   api: file
   ports:
-    - name: workflow-service
+    - name: q1-workflow-service
       port: 3000
       targetPort: 3000
   external:

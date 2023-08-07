@@ -13,7 +13,7 @@ interface WorkflowProcessOutputModel{
 interface WorkflowStartModel{
     id: string,                 // workflow id ... to keep track of the process -> generate a UUID
     userId: string,               // uid from frontend
-    messageId: string,          // messageID from frontend
+    messageUid: string,          // messageID from frontend
     timestamp: number,
     params:{[key: string]: string}    // defines the parameters of the entire process
     start: string[]
@@ -23,8 +23,6 @@ interface WorkflowStartModel{
 type WorkflowProcessStatusMessage = {
     statusCount: number,                // status counter
     statusTotal: number,                // status total -> how many steps in a process
-    messageUid: string,                 // message Uid -> needed to tell where to send it back
-    userId: string,                     // user Id -> to tell from which user it is to get user-specific data.
     type: string,                       // type -> DETAIL_TYPE (ADX_CALCULATION, ADX_FINISH, CDX_CALCULATION, CDX_FINISH, etc.)
     processType: string,                // process type -> what kind of process is this supposed to be. PROCESS_TYPE (ADX, CDX, SAVE, etc.)
     status: string                      // current status: INFO, DONE, WARNING, ERROR;
@@ -36,8 +34,9 @@ interface WorkflowProcessStatusModel{
     // statusTotal: number;              // status total -> how many steps in a process             -> In message property
     message: WorkflowProcessStatusMessage;                    // The status message -> can have a state and a message ...    -> containes
     workflowId: string;               // to which workflow it should belong too
-    //messageID: string;                // message ID from where it comes from                      -> In message property
     processId: string;                // Process ID from which process it come from.
+    messageUid: string,                 // message Uid -> needed to tell where to send it back
+    userId: string,                     // user Id -> to tell from which user it is to get user-specific data.
     timestamp: Date                   // Timestamp ... added by the
 }
 

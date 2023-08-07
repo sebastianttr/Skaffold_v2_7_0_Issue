@@ -24,10 +24,10 @@ portForward:
 deploy:
   helm:
     releases:
-      - name: workflow-service-dev
+      - name: workflow-service-dev-1
         chartPath: deployment/dev-remote
         artifactOverrides:
-          image: local/workflow-service-dev
+          image: local/workflow-service-dev-1
         imageStrategy:
           helm:
             explicitRegistry: true
@@ -37,7 +37,7 @@ profiles:
   - name: clusterbuild
     build:
       artifacts:
-        - image: gitlab.quanticfinancial.com:5050/microservice/q1-workflow-service/dev
+        - image: gitlab.quanticfinancial.com:5050/workflow/q1-workflow-service/dev-1
           sync:
             infer:
               - '**/*.js'
@@ -46,7 +46,7 @@ profiles:
               - 'seeding.json'
           kaniko:
             cache:
-              repo: gitlab.quanticfinancial.com:5050/microservice/q1-workflow-service/dev/cache
+              repo: gitlab.quanticfinancial.com:5050/workflow/q1-workflow-service/dev-1/cache
             dockerfile: ./Dockerfile/Dockerfile.dev
       cluster:
         namespace: kaniko
@@ -59,20 +59,20 @@ profiles:
     deploy:
       helm:
         releases:
-          - name: workflow-service-dev
+          - name: workflow-service-dev-1
             chartPath: deployment/dev-remote
             artifactOverrides:
-              image: gitlab.quanticfinancial.com:5050/microservice/q1-workflow-service/dev
+              image: gitlab.quanticfinancial.com:5050/workflow/q1-workflow-service/dev-1
             imageStrategy:
               helm:
                 explicitRegistry: true
   - name: stagingbuild
     build:
       artifacts:
-        - image: gitlab.quanticfinancial.com:5050/microservice/q1-workflow-service/staging
+        - image: gitlab.quanticfinancial.com:5050/workflow/q1-workflow-service/staging-1
           kaniko:
             cache:
-              repo: gitlab.quanticfinancial.com:5050/microservice/q1-workflow-service/staging/cache
+              repo: gitlab.quanticfinancial.com:5050/workflow/q1-workflow-service-1/staging-1/cache
             dockerfile: ./Dockerfile
       cluster:
         dockerConfig:
@@ -87,7 +87,7 @@ profiles:
           - name: workflow-service
             chartPath: deployment/staging
             artifactOverrides:
-              image: gitlab.quanticfinancial.com:5050/microservice/q1-workflow-service/staging
+              image: gitlab.quanticfinancial.com:5050/workflow/q1-workflow-service/staging-1
             namespace: staging
             imageStrategy:
               helm:
