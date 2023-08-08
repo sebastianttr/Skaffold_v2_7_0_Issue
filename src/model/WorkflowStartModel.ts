@@ -50,19 +50,19 @@ class WorkFlowProcessModel {
     // output: {}
     workflowId: string;      // Workflow ID -> String because UUID
     next: string[];          // process id of the next process -> send this back to workflow process to keep track to get process params and start next process.
-    messageId: string;       // For reporting the status. -> String because UUID
+    messageUid: string;       // For reporting the status. -> String because UUID
     userId: string;
     variables: any;
     params: any;
     output?: WorkflowProcessOutputModel;
 
-    constructor(processID: string, processName: string, processState: WorkflowStates, workflowID: string, next: string[], messageID: string, userID: string,variables: any, params: any, output: WorkflowProcessOutputModel) {
+    constructor(processID: string, processName: string, processState: WorkflowStates, workflowID: string, next: string[], messageUid: string, userID: string,variables: any, params: any, output: WorkflowProcessOutputModel) {
         this.processId = processID;
         this.processName = processName;
         this.processState = processState;
         this.workflowId = workflowID;
         this.next = next;
-        this.messageId = messageID;
+        this.messageUid = messageUid;
         this.userId = userID;
         this.variables = variables;
         this.params = params;

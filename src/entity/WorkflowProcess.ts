@@ -8,7 +8,7 @@ const workflowProcessSchema = new Schema<WorkFlowProcessModel>({
     next: [String],                     // List of next processes. Parallel streams works because array.
     variables: Object,                  // Variables. Either a map as string, or the name of the blob.
     workflowId: String,                 // Workflow id
-    messageId: String,                  // Message id ... for reporting back to a user(s)
+    messageUid: String,                  // Message id ... for reporting back to a user(s)
     params: String,                     // Params ... saved as string for simplicity’s sake
     output: Object                      // Output from the services.
 });

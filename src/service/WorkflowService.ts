@@ -299,7 +299,7 @@ export default class WorkflowService{
         // also assign them a state and some IDs.
         let processes: WorkFlowProcessModel[] = workflowStartModel.processes!.map(item => {
             item.workflowId = workflowStartModel.id
-            item.messageId = workflowStartModel.messageUid;
+            item.messageUid = workflowStartModel.messageUid;
             item.userId = workflowStartModel.userId;
 
             // check if the current item process id is part of start model start property -> assign correct state
