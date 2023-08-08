@@ -22,7 +22,7 @@ function incoming(topic: string){
     ) {
         // get the kafka messaging service and the kafka consumer
         const kafkaMessagingService:KafkaMessagingService = Inject(KafkaMessagingService)
-        const consumer = kafkaMessagingService.kafka.consumer({
+        const consumer = kafkaMessagingService.kafka!.consumer({
             groupId: packageJSON.name,
             rebalanceTimeout: 4000
         })
@@ -32,15 +32,15 @@ function incoming(topic: string){
             .then(async () => {
                 // subscribe to the topic
                 await consumer.subscribe({ topics: [topic], fromBeginning: true,})
-                Log.info("Subscribed")
+
                 await consumer.run({
                     // for each message, send it back to the function.
                     eachMessage: async ({ topic, partition, message, heartbeat, pause }) => {
                         consumer.pause([{ topic }])
 
                         // Log.info("got something")
-                        message.key = defaultBuffer(message.key)
-                        message.value = defaultBuffer(message.value)
+                        message.key = defaultBuffer(message.key!)
+                        message.value = defaultBuffer(message.value!)
 
                         let messageValue = message?.value.toString()
                             .replace(/\\/g, '')

@@ -6,10 +6,10 @@ const workflowStateUserSchema = new Schema<WorkflowStateModel>({
     currentState: String,               // uid from frontend
     currentProcessId: [String],         // messageID from frontend
     timestamp: Number,                  // timestamp
-    UID: String,
-    messageID: String,
+    userId: String,
+    messageUid: String,
     start: [String],
-    // processes: [],                      // list of processes. where we define the next process and the parameters of the process.
+    // processes: [],                   // list of processes. where we define the next process and the parameters of the process.
     params: Object                      // Params - can specify how the workflow is treated.
 });
 

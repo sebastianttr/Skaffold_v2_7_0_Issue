@@ -10,8 +10,9 @@ import objectSize from "object-sizeof";
 import {WorkflowStatus} from "../entity/WorkflowStatus";
 import {WorkflowState} from "../entity/WorkflowState";
 import {WorkflowProcesses} from "../entity/WorkflowProcess";
+import {start} from "repl";
 
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
+const delay = (ms:number) => new Promise(resolve => setTimeout(resolve, ms))
 
 const BYTE_IN_MB = 0.00000095367432;
 
@@ -21,7 +22,9 @@ export default class WorkflowService{
     private static kafkaMessageService: KafkaMessagingService = Inject(KafkaMessagingService)
     private static blobService: BlobService = Inject(BlobService)
 
-    constructor() { }
+    constructor() {
+
+    }
 
 
     // get the variable over HTTP from a known microservice endpoint
@@ -61,15 +64,69 @@ export default class WorkflowService{
         const workFlowProcessStatusModel: WorkflowProcessStatusModel = JSON.parse(message.value)
 
         // Log the status
-        //Log.info(`(${workFlowProcessStatusModel.processID} [${workFlowProcessStatusModel.message["status"]}]) ${workFlowProcessStatusModel.message["message"]}`)
+        // Log.info(`(${workFlowProcessStatusModel.processID} [${workFlowProcessStatusModel.message["status"]}]) ${workFlowProcessStatusModel.message["message"]}`)
 
         // set timestamp - so we can clear it out after some time
-        workFlowProcessStatusModel.timestamp = new Date(Date.now())
+        //workFlowProcessStatusModel.timestamp = new Date(Date.now())
+
+        // Remove old status messages because we cannot have statuses with the same worklflowId, processId an status count -> bad for process time estimation
+        await WorkflowService.removeOldStatuses(workFlowProcessStatusModel)
+
+        // Insert incoming status into the database
+        await WorkflowStatus.insertMany([workFlowProcessStatusModel])
+
+        //Log.info(`Process ID: ${workFlowProcessStatusModel.processId}, Workflow ID: ${workFlowProcessStatusModel.workflowId}`)
+        const processFinishTime = await WorkflowService.estimateProcessFinishTime(workFlowProcessStatusModel)
+
+        Log.info(`ETA: ${(processFinishTime / 1000).toFixed(3)} sec`)
 
         // send some messages back to user ...
         // TODO: SOCKET IO STUFF HERE
 
-        await WorkflowStatus.insertMany([workFlowProcessStatusModel])
+    }
+
+    private static removeOldStatuses = async (workflowProcessStatusModel: WorkflowProcessStatusModel) => {
+        // Important: Status counter begins with 1
+        // remove statuses that have already been in the database when a new process begins.
+        const oldStatuses: WorkflowProcessStatusModel[] = (await WorkflowStatus.find(
+            {"message.statusCount":0, workflowId: workflowProcessStatusModel.workflowId, processId: workflowProcessStatusModel.processId, messageUid: workflowProcessStatusModel.messageUid}))!
+
+        // if there is an old status with status count of 1 and the current incoming status has number 1
+        // then remove all the statuses by workflowId and processId
+        if(oldStatuses.length >= 1 && workflowProcessStatusModel.message.statusCount == 0){
+            // remove all with given workflowId and processId
+            await WorkflowStatus.remove({workflowId: workflowProcessStatusModel.workflowId, processId: workflowProcessStatusModel.processId})
+        }
+    }
+
+    private static estimateProcessFinishTime = async (workFlowProcessStatusModel: WorkflowProcessStatusModel): Promise<number> => {
+        // get all statuses with workflow id and process id
+        const allWorkflowStatuses: WorkflowProcessStatusModel[] = (await WorkflowStatus.find(
+            {workflowId: workFlowProcessStatusModel.workflowId,processId:  workFlowProcessStatusModel.processId, messageUid: workFlowProcessStatusModel.messageUid}))!
+
+        // you need at least 2 status messages to be able to calculate the
+        if(allWorkflowStatuses.length >= 2){
+            const allWorkflowStatusesTimestampSorted: WorkflowProcessStatusModel[] = allWorkflowStatuses.sort((a, b) => {
+                return a.timestamp.valueOf() - b.timestamp.valueOf();
+            });
+
+            const startTime: number = allWorkflowStatusesTimestampSorted[0].timestamp.valueOf()
+
+            // calculate the average time
+            const averageTime = (allWorkflowStatusesTimestampSorted.at(-1)?.timestamp.valueOf()! - startTime) / (allWorkflowStatusesTimestampSorted.length-1)
+            const timeCount: number = allWorkflowStatusesTimestampSorted.at(-1)?.timestamp.valueOf()! - startTime;
+            const timeTotal: number = averageTime * (allWorkflowStatusesTimestampSorted.at(-1)?.message.statusTotal!)
+            const remainingTime = (timeTotal - timeCount);
+
+            //console.log("Remaining Time: " + remainingTime)
+            return remainingTime;
+        }
+        else {
+            //console.log("There is no average to be calculated.")
+            return NaN;
+        }
+
+        // estimate how much longer it will take.
     }
 
 
@@ -95,21 +152,20 @@ export default class WorkflowService{
         // record from kafka to usable object
         const workFlowProcess: WorkFlowProcessModel = JSON.parse(message.value)
 
-        Log.info("Done with this process: " + workFlowProcess.processID)
+        Log.info("Done with this process: " + workFlowProcess.processId)
 
         // get the current process and update the state from RUN to DONE
-        let currentPersistedProcess : WorkFlowProcessModel = await WorkFlowProcessModel.getProcess(workFlowProcess.processID)
+        let currentPersistedProcess: WorkFlowProcessModel = (await WorkFlowProcessModel.getProcess(workFlowProcess.processId))!
 
         // get the workflow state
-        let currentWorkflowState : WorkflowStateModel = await WorkflowStateModel.getWorkflowState(workFlowProcess.workflowID)
+        let currentWorkflowState: WorkflowStateModel = (await WorkflowStateModel.getWorkflowState(workFlowProcess.workflowId))!
 
         // update the current processes
-        currentWorkflowState.currentProcessId = WorkflowStateModel.removeFromCurrentProcessID(currentWorkflowState.currentProcessId,workFlowProcess.processID)
+        currentWorkflowState.currentProcessId = WorkflowStateModel.removeFromCurrentProcessID(currentWorkflowState.currentProcessId,workFlowProcess.processId)
 
         // Update the states and save the output variables
         currentPersistedProcess.processState = workFlowProcess.processState;
         currentPersistedProcess.output = workFlowProcess.output
-
 
         // Now we start each process individually ... by iterating over the next fields
         // before you can continue with the next process, check to see if the previous process is really done.
@@ -119,7 +175,7 @@ export default class WorkflowService{
         //const doneProcessCounter = 0;
 
         // check if there is a next process to start for this one.
-        let nextProcesses = [];
+        let nextProcesses: any[] = [];
 
         if(currentPersistedProcess.next.length) {
             // Has a next
@@ -146,7 +202,7 @@ export default class WorkflowService{
                     currentWorkflowState.currentProcessId.push(nextProcess)
 
                     // get the next processes as a model (not process id) from the database.
-                    const nextProcessModel: WorkFlowProcessModel = await WorkflowStateModel.getNextProcess(nextProcess)
+                    const nextProcessModel: WorkFlowProcessModel = (await WorkflowStateModel.getNextProcess(nextProcess))!
 
                     // preprocess the variables -> to take into account that variables can come from other places too
                     nextProcessModel.variables = await WorkflowService.preprocessVariables(nextProcessModel)
@@ -165,7 +221,7 @@ export default class WorkflowService{
                 }
                 else {
                     // set the status of the workflow to done.
-                    currentWorkflowState.currentProcessId = currentWorkflowState.currentProcessId.filter(value => value == workFlowProcess.processID)
+                    currentWorkflowState.currentProcessId = currentWorkflowState.currentProcessId.filter(value => value == workFlowProcess.processId)
 
                     // send some messages back to user ...
                     // TODO: SOCKET IO STUFF HERE
@@ -197,7 +253,7 @@ export default class WorkflowService{
 
         // get all the variables -> fetch
         // go over all the variables from the Workflow Start Model
-        for(const process of workflowStartModel.processes){
+        for(const process of workflowStartModel.processes!){
             // variables
             let variables = {}
 
@@ -217,8 +273,8 @@ export default class WorkflowService{
         // compose the messages.
         const workFlowState: WorkflowStateModel = {
             id:workflowStartModel.id,                                           // ID
-            messageID: workflowStartModel.messageID,                            // MessageID
-            UID: workflowStartModel.UID,                                        // UID
+            messageUid: workflowStartModel.messageUid,                            // MessageID
+            userId: workflowStartModel.userId,                                        // UID
             timestamp: Date.now(),                                              // Record the current timestamp
             currentProcessId: workflowStartModel.start,                         // first process start
             currentState: WorkflowStates.RUN,                                   // start with a running state
@@ -241,12 +297,13 @@ export default class WorkflowService{
 
         // give all the processes the workflow model.
         // also assign them a state and some IDs.
-        let processes: WorkFlowProcessModel[] = workflowStartModel.processes.map(item => {
-            item.workflowID = workflowStartModel.id
-            item.messageID = workflowStartModel.messageID;
+        let processes: WorkFlowProcessModel[] = workflowStartModel.processes!.map(item => {
+            item.workflowId = workflowStartModel.id
+            item.messageUid = workflowStartModel.messageUid;
+            item.userId = workflowStartModel.userId;
 
             // check if the current item process id is part of start model start property -> assign correct state
-            item.processState = (workflowStartModel.start.includes(item.processID)) ? WorkflowStates.RUN:WorkflowStates.IDLE;
+            item.processState = (workflowStartModel.start.includes(item.processId)) ? WorkflowStates.RUN:WorkflowStates.IDLE;
             item.output = {variables:{}}
             return item;
         })
@@ -256,13 +313,12 @@ export default class WorkflowService{
         // once in the blob storage and DB, send all the necessary information over kafka to service
 
         // get the start processes
-        const startingProcesses: WorkFlowProcessModel[] = workflowStartModel.processes.filter(item => workflowStartModel.start.includes(item.processID))
+        const startingProcesses: WorkFlowProcessModel[] = workflowStartModel.processes!.filter(item => workflowStartModel.start.includes(item.processId))
 
         //Log.info("Start processes: " + JSON.stringify(startingProcesses))
 
         // send the message out over kafka to start each process.
         startingProcesses.forEach(process => {
-            //Log.info(JSON.stringify(process))
             WorkflowService.sendProcessMessageOverKafka(process)
         })
 
@@ -275,15 +331,15 @@ export default class WorkflowService{
     // process can only be restarted if the process is currently
     restartProcess = async (process: WorkFlowProcessModel): Promise<string> => {
         // get the workflow states and the process from the database
-        const workflowStateModel: WorkflowStateModel = await WorkflowStateModel.getWorkflowState(process.workflowID)
-        const processModel: WorkFlowProcessModel = await WorkFlowProcessModel.getProcess(process.processID)
+        const workflowStateModel: WorkflowStateModel = (await WorkflowStateModel.getWorkflowState(process.workflowId))!
+        const processModel: WorkFlowProcessModel = (await WorkFlowProcessModel.getProcess(process.processId))!
 
         // check if the do exist
         if(workflowStateModel != null && processModel != null){
             // check the state, only DONE and EXCEPTION can work
             if (workflowStateModel.currentState == WorkflowStates.DONE || WorkflowStates.EXCEPTION) {
                 // get the output from the previous operations
-                let parallelProcesses: WorkFlowProcessModel[] = await WorkFlowProcessModel.getParallelProcesses(process.processID)
+                let parallelProcesses: WorkFlowProcessModel[] = await WorkFlowProcessModel.getParallelProcesses(process.processId)
 
 
                 // check if there is an output variable from the previous process, if not, do not start and notify
@@ -297,7 +353,6 @@ export default class WorkflowService{
                             ...proc.variables
                         }
                     })
-
 
                     // set the state to run and the params as restart
                     processModel.processState = WorkflowStates.RUN
@@ -317,7 +372,7 @@ export default class WorkflowService{
                     // if the restarting process does not have output variables from the previous processes
                     let returnText = "Cannot start the process because we are missing the output for the other processes: "
 
-                    processesOutputVariables.missingVariableProcess.forEach((item,index) => {
+                    processesOutputVariables.missingVariableProcess.forEach((item: string, index: number) => {
                         returnText += item
 
                         if(index != processesOutputVariables.missingVariableProcess.length - 1){
@@ -337,7 +392,7 @@ export default class WorkflowService{
     }
 
     private static async preprocessVariables(process: WorkFlowProcessModel): Promise<any> {
-        let variables = {};
+        let variables:{[key:string]:string} = {};
         // get it in a different format for easier processing
         const processVariablesName: { key: string; value: unknown; }[] = Object.entries(process.variables).map(entry => ({key: entry[0], value: entry[1]}))
 
@@ -348,8 +403,8 @@ export default class WorkflowService{
 
             if(entryVal.startsWith("http")){         // like this for example: http(service_name, variable_name[optional, else take myVar])
                 // create an options variable which will have service name and variable name for the fetching
-                const options = WorkflowService.getVariableOptions(entry)
-                variables[entry.key] = await WorkflowService.fetchVariablesOverKafka(options)
+                const options:{[key:string]:string} = WorkflowService.getVariableOptions(entry)
+                variables[entry.key] = (await WorkflowService.fetchVariablesOverKafka(options))!
             }
             else if (entryVal.startsWith("kafka")){  // kafka(service_name, variable_name[optional, else take myVar])
                 // create an options variable which will have service name and variable name for the fetching
@@ -358,7 +413,7 @@ export default class WorkflowService{
             }
             else {
                 // else it stays the same
-                variables[entry.key] = entry.value
+                variables[entry.key] = entry.value as string
             }
         }
 
@@ -380,23 +435,23 @@ export default class WorkflowService{
     private static persistProcesses = async (processes: WorkFlowProcessModel[]) => {
         for await(const process of processes){
             await WorkflowProcesses.updateOne(
-                {"processID": {$eq : process.processID},"workflowID": {$eq : process.workflowID}},
+                {"processId": {$eq : process.processId},"workflowId": {$eq : process.workflowId}},
                 process,
                 {upsert: true}
             )
         }
     }
 
-    public static getWorkflowState = async (uid: string): Promise<WorkflowStateModel[]> => WorkflowState.find({UID: uid}).exec()
+    public static getWorkflowState = async (userId: string): Promise<WorkflowStateModel[]> => WorkflowState.find({userId: userId}).exec()
 
-    public static getWorkflowProcess = async (uid: string, processID: string): Promise<WorkflowStateModel> => {
-        const workflowID: WorkflowStateModel = (await WorkflowState.findOne({UID: uid})).id
-        return WorkflowProcesses.findOne({workflowID: workflowID, processID: processID});
+    public static getWorkflowProcess = async (userId: string, processId: string): Promise<WorkflowStateModel | null> => {
+        const workflowId: WorkflowStateModel = (await WorkflowState.findOne({userId: userId}))!.id
+        return WorkflowProcesses.findOne({workflowId: workflowId, processId: processId});
     }
 
-    public static getWorkflowProcesses = async (uid: string): Promise<WorkflowStateModel> => {
-        const workflowID: WorkflowStateModel = (await WorkflowState.findOne({UID: uid})).id
-        return WorkflowProcesses.findOne({workflowID: workflowID});
+    public static getWorkflowProcesses = async (userId: string): Promise<WorkflowStateModel | null> => {
+        const workflowId: WorkflowStateModel = (await WorkflowState.findOne({userId: userId}))!.id
+        return WorkflowProcesses.findOne({workflowId: workflowId});
     }
 
     private static sendProcessMessageOverKafka = (process: WorkFlowProcessModel) => {
@@ -405,7 +460,7 @@ export default class WorkflowService{
             Log.info("Warning! The variables contained is too big for Kafka to transmit. (Over 1 MB of Message size.)")
 
             // upload the blob storage
-            const blobName = `var_${process.workflowID}_${process.processID}`;
+            const blobName = `var_${process.workflowId}_${process.processId}`;
             WorkflowService.blobService.storeBlob(blobName, JSON.stringify(process.variables));
 
             // delete everything in the variable property.

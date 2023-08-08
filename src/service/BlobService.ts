@@ -14,8 +14,8 @@ const azure_connection_string:string = process.env.AZURE_BLOB_CONNECTION_STRING 
 @singleton()
 export class BlobService {
 
-    blobServiceClient: BlobServiceClient;
-    blobContainer: ContainerClient;
+    blobServiceClient?: BlobServiceClient;
+    blobContainer?: ContainerClient;
 
     constructor() {
         try{
@@ -23,20 +23,20 @@ export class BlobService {
             this.blobContainer = this.blobServiceClient.getContainerClient(process.env["BLOB_STORAGE_CONTAINER"] ?? "devworkflow")
             Log.info("Successfully connected to blob storage!")
         }
-        catch (e){
+        catch (e:any){
             Log.error("Error connection to Azure Blob Storage!")
             Log.error(e.name + " : " + e.message)
         }
     }
 
     storeBlob = (blobName: string, content: string) => new Promise<void>(async (resolve, reject) => {
-        await this.blobContainer.uploadBlockBlob(blobName,content,content.length,{})
+        await this.blobContainer!.uploadBlockBlob(blobName,content,content.length,{})
         resolve()
     })
 
     // delete a blob by using the name of the blob
     deleteBlob = (blobName: string) => new Promise<void>(async (resolve, reject) => {
-        await this.blobContainer.deleteBlob(blobName)
+        await this.blobContainer!.deleteBlob(blobName)
         resolve()
     })
 
@@ -44,7 +44,7 @@ export class BlobService {
     deleteBlobs = (blobNames: string[]) => new Promise<void>(async (resolve, reject) => {
         for await(const blobs of blobNames){
             try{
-                await this.blobContainer.deleteBlob(blobs);
+                await this.blobContainer!.deleteBlob(blobs);
 
             }
             catch (e){
@@ -61,11 +61,11 @@ export class BlobService {
         resolve(contentBuffer.toString())
     })
 
-    getBlobContentBuffer = (blobName: string):Promise<Buffer> => this.blobContainer.getBlobClient(blobName).download()
+    getBlobContentBuffer = (blobName: string):Promise<Buffer> => this.blobContainer!.getBlobClient(blobName).download()
         .then(stream => {
-            const content: NodeJS.ReadableStream = stream.readableStreamBody
-            const chunks = [];
-            let buffer: Buffer;
+            const content: NodeJS.ReadableStream = stream.readableStreamBody!
+            const chunks: any[] = [];
+            let buffer: Buffer = Buffer.alloc(0);
 
             content.on('data', (data) => {
                 chunks.push(data instanceof Buffer ? data : Buffer.from(data));
@@ -109,10 +109,10 @@ export class BlobService {
             prefix: ''
         };
 
-        let iterator = this.blobContainer.listBlobsFlat(listOptions).byPage({ maxPageSize });
+        let iterator = this.blobContainer!.listBlobsFlat(listOptions).byPage({ maxPageSize });
         let response = (await iterator.next()).value;
 
-        resolve(response.segment.blobItems.map(i => i.name));
+        resolve(response.segment.blobItems.map((i:any) => i.name));
     })
 
 }

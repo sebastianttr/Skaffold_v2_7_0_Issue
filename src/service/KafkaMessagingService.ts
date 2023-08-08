@@ -54,7 +54,7 @@ class KafkaMessaging {
         // Log.info(topic)
         // Log.info(conf.topics[topic ?? ""])
         await this.producer!.send({
-            topic: topic,
+            topic: topic ?? "dev.workflow.element1",
             messages: [
                 {
                     headers: (headers ?? {"key":"value"}) as IHeaders,
