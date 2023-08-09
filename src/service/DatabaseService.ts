@@ -1,9 +1,8 @@
-import {injectable, singleton} from "tsyringe";
+import { singleton } from "tsyringe";
 import dotenv from "dotenv"
 import * as mongoose from "mongoose";
-import {Log} from "../common";
+import {Log} from "../util/logging";
 import {Exception} from "tsoa";
-import {model, Mongoose, Schema} from "mongoose";
 
 dotenv.config()
 

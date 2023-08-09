@@ -1,4 +1,5 @@
 import {SchemaType} from "mongoose";
+import {WorkflowProcessStatusModel} from "./src/model/WorkflowStartModel";
 
 declare global {
 
@@ -10,6 +11,10 @@ declare module 'mongoose' {
              class WorkflowProcessStatusMessageType extends SchemaType {}
         }
     }
+
+
 }
+
+
 
 

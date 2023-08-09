@@ -1,7 +1,7 @@
 import {model, Schema} from "mongoose";
-import {WorkFlowProcessModel} from "../model/WorkflowStartModel";
+import {IWorkflowProcessModel} from "../model/WorkflowProcessModel";
 
-const workflowProcessSchema = new Schema<WorkFlowProcessModel>({
+const workflowProcessSchema = new Schema<IWorkflowProcessModel>({
     processId: String,                  // Process ID as string -> Identifier
     processName: String,                // Process name as string
     processState: Number,               // Workflow States
@@ -13,6 +13,6 @@ const workflowProcessSchema = new Schema<WorkFlowProcessModel>({
     output: Object                      // Output from the services.
 });
 
-const WorkflowProcesses = model<WorkFlowProcessModel>("workflow_processes",workflowProcessSchema);
+const WorkflowProcesses = model<IWorkflowProcessModel>("workflow_processes",workflowProcessSchema);
 
 export {WorkflowProcesses}

@@ -1,7 +1,7 @@
 import {model, Schema} from "mongoose";
-import {WorkflowStateModel} from "../model/WorkflowStateModel";
+import {IWorkflowStateModel} from "../model/WorkflowStateModel";
 
-const workflowStateUserSchema = new Schema<WorkflowStateModel>({
+const workflowStateUserSchema = new Schema<IWorkflowStateModel>({
     id: String,                         // workflow id ... to keep track of the process -> generate a UUID
     currentState: String,               // uid from frontend
     currentProcessId: [String],         // messageID from frontend
@@ -13,6 +13,6 @@ const workflowStateUserSchema = new Schema<WorkflowStateModel>({
     params: Object                      // Params - can specify how the workflow is treated.
 });
 
-const WorkflowState = model<WorkflowStateModel>("workflow_states",workflowStateUserSchema);
+const WorkflowState = model<IWorkflowStateModel>("workflow_states",workflowStateUserSchema);
 
 export {WorkflowState}

@@ -1,10 +1,7 @@
 import {singleton} from "tsyringe";
-import {BlobDownloadResponseParsed, BlobServiceClient, ContainerClient} from "@azure/storage-blob";
+import { BlobServiceClient, ContainerClient} from "@azure/storage-blob";
 import dotenv from "dotenv"
-import {Inject, Log} from "../common";
-import {Exception} from "tsoa";
-import {rejects} from "assert";
-import * as buffer from "buffer";
+import {Log} from "../util/logging";
 
 dotenv.config();
 

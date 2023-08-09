@@ -1,7 +1,9 @@
-import {Inject, Log} from "../common";
+import {Inject} from "../util/injection";
 import KafkaMessagingService from "../service/KafkaMessagingService";
 import packageJSON from "../../package.json"
 import {IHeaders} from "kafkajs";
+import {Log} from "../util/logging";
+import {InjectionToken} from "tsyringe";
 
 interface KafkaIncomingRecord {
     key: string,
@@ -11,14 +13,21 @@ interface KafkaIncomingRecord {
     topic: string
 }
 
+
+interface IIncomingProperties <T> {
+    topic: string
+    groupId?: string,
+    injectables?: T[]
+}
+
 const defaultBuffer = (buffer: Buffer) => (buffer) ? buffer : Buffer.from("")
 
 // Incoming decorator
-function incoming(topic: string){
+function incoming<T extends InjectionToken>(properties: IIncomingProperties<T>){
     return function (
         target: Object,
         key: string | symbol,
-        descriptor: PropertyDescriptor
+        descriptor: TypedPropertyDescriptor<any>
     ) {
         // get the kafka messaging service and the kafka consumer
         const kafkaMessagingService:KafkaMessagingService = Inject(KafkaMessagingService)
@@ -27,11 +36,16 @@ function incoming(topic: string){
             rebalanceTimeout: 4000
         })
 
+        const injectableInstances: T[] = (properties.injectables || []).map(item => Inject(item))
+
+        const originalValue = descriptor.value
+        console.log(originalValue)
+
         // connect to consumer
         consumer.connect()
             .then(async () => {
                 // subscribe to the topic
-                await consumer.subscribe({ topics: [topic], fromBeginning: true,})
+                await consumer.subscribe({ topics: [properties.topic], fromBeginning: true,})
 
                 await consumer.run({
                     // for each message, send it back to the function.
@@ -55,7 +69,13 @@ function incoming(topic: string){
                         };
 
                         try{
-                            await descriptor.value(incomingRecord);
+                            // send the incoming record back.
+                            // descriptor!.value = function(...args: any[]) {
+                            //
+                            //     return originalValue.apply(this, args);
+                            // }
+
+                            await descriptor.value(incomingRecord, injectableInstances);
                         }
                         catch (e: any) {
                             Log.error(e.stack)
@@ -64,7 +84,7 @@ function incoming(topic: string){
                     },
                     eachBatch: async ({ batch, resolveOffset, heartbeat, isRunning, isStale }) => {
                         Log.info("got something batched")
-                        await descriptor.value("Test");
+                        await descriptor.value("Test",injectableInstances);
                     },
                     partitionsConsumedConcurrently: 10,
                     autoCommitThreshold: 100,

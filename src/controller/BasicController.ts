@@ -1,13 +1,11 @@
-import {Get, Path, Route, Request, Delete} from "tsoa";
-import {Inject, Log} from "../common";
+import { Route, Request, Delete} from "tsoa";
+import {Inject} from "../util/injection";
 import {Controller} from "@tsoa/runtime";
-import WorkflowService from "../service/WorkflowService";
 import BlobService from "../service/BlobService";
 
 @Route("api/v1/basic")
 export class BasicController extends Controller {
 
-    private workflowService: WorkflowService = Inject(WorkflowService)
     private blobService: BlobService = Inject(BlobService)
 
     @Delete("blobs")

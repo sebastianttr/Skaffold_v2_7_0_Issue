@@ -1,10 +1,7 @@
 import {IHeaders, Kafka, logLevel, Message, Partitioners, Producer} from "kafkajs"
 import * as dotenv from 'dotenv'
 import {singleton} from "tsyringe";
-import {Inject, Log} from "../common"
-import packageJSON from "../../package.json";
-import {KafkaIncomingRecord} from "../helper/KafkaIncoming";
-
+import {Log} from "../util/logging"
 
 dotenv.config()
 

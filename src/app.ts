@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import express from 'express';
-import {Inject, Log} from "./common";
+import {Inject} from "./util/injection";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
@@ -10,6 +10,9 @@ import {DatabaseService} from "./service/DatabaseService";
 import KafkaMessagingService from "./service/KafkaMessagingService";
 import BlobService from "./service/BlobService";
 import {RegisterRoutes} from "../dist/routes";
+import {Exception} from "tsoa";
+import {Log} from "./util/logging";
+import {KafkaMessageProcessor} from "./processor/KafkaMessageProcessor";
 
 const app = express();
 const port = 3000;
@@ -18,6 +21,7 @@ const port = 3000;
 const databaseService: DatabaseService = Inject(DatabaseService)
 const kafkaService: KafkaMessagingService = Inject(KafkaMessagingService)
 const blobService: BlobService = Inject(BlobService);
+const kafkaMessageProcessor: KafkaMessageProcessor = Inject(KafkaMessageProcessor);
 
 (async () => {
     app.use(cors({
@@ -44,7 +48,8 @@ const blobService: BlobService = Inject(BlobService);
     app.use(express.static("public"));
 
     // connect to database:
-    databaseService.connectToMongo().then(() => {
+    databaseService.connectToMongo()
+    .then(() => {
         Log.info("Registering routes!")
         RegisterRoutes(app);
 
@@ -52,8 +57,13 @@ const blobService: BlobService = Inject(BlobService);
             Log.info(`Express is listening at http://localhost:${port}`);
         });
     })
+    .catch((e:Exception) => {
+        Log.error(`Error during database connection: [${e.status}] ${e.message}`)
+    })
 
-})()
+})().catch((e: Exception) => {
+    Log.error(`Error during app startup: [${e.status}] ${e.message}`)
+} )
 
 
 
