@@ -1,6 +1,6 @@
 import {console as Console} from "tracer";
 import Transport from "winston-transport";
-import winston, {format, transports} from "winston";
+import winston, {format} from "winston";
 
 const { combine, colorize, timestamp, printf } = format;
 
@@ -23,20 +23,16 @@ const getFormatedDate = () => {
     return `${hour}:${minute}:${seconds}`;
 }
 
-export const LogDev = new transports.Console({
-    format: format.combine(format.simple(), format.colorize())
+export const LogDev = Console({
+    format: [
+        '({{file}}): {{message}}',
+        {
+            info: `(${getFormatedDate()}): {{message}} `,
+            error: '({{file}}:{{line}}) {{message}}'
+        }
+    ],
+    dateformat: 'HH:MM:ss.L',
 })
-
-/*Console({
-format: [
-    '({{file}}): {{message}}',
-    {
-        info: `(${getFormatedDate()}): {{message}} `,
-        error: '({{file}}:{{line}}) {{message}}'
-    }
-],
-dateformat: 'HH:MM:ss.L',
-})*/
 
 class CustomTransport extends Transport {
     constructor(opts:any) {
