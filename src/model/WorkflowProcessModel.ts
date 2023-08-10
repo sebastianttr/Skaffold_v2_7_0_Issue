@@ -1,6 +1,6 @@
 // used for both the input(start JSON) and to pass around the services.
-import {WorkflowStates} from "./WorkflowStateModel";
 import IWorkflowProcessOutputModel from "./WorkflowProcessOutputModel";
+import {WorkflowStates} from "./enums/WorkflowStates";
 
 export interface IWorkflowProcessModel {
     processId: string;       // process id = generated UID = to keep track of the process

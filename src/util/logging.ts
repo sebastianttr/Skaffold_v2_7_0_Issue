@@ -1,8 +1,7 @@
-import {console as Console} from "tracer";
-import Transport from "winston-transport";
-import winston, {format} from "winston";
+import winston, {addColors, format} from "winston";
+import {inspect} from "util";
 
-const { combine, colorize, timestamp, printf } = format;
+const { combine, colorize, label, timestamp, json, prettyPrint, printf, simple } = format;
 
 const leadingZero = (num:number):string => {
     return (num < 10) ? '0' + num : String(num)
@@ -23,27 +22,11 @@ const getFormatedDate = () => {
     return `${hour}:${minute}:${seconds}`;
 }
 
-export const LogDev = Console({
-    format: [
-        '({{file}}): {{message}}',
-        {
-            info: `(${getFormatedDate()}): {{message}} `,
-            error: '({{file}}:{{line}}) {{message}}'
-        }
-    ],
-    dateformat: 'HH:MM:ss.L',
-})
-
-class CustomTransport extends Transport {
-    constructor(opts:any) {
-        super(opts);
-    }
-
-    log(info:any, callback: any) {
-        LogDev.info(info["message"]);
-        callback();
-    }
-}
+const colors = {
+    debug: 'grey',
+    warn: 'yellow',
+    error: 'red',
+};
 
 let consoleTransport: any[] = [];
 
@@ -53,11 +36,31 @@ if (process.env.NODE_ENV == 'production') {    // in production, we use file and
     consoleTransport.push(new winston.transports.Console({
         format: winston.format.simple(),
     }))
-    // add a custom transport
 }
-else {  // for any other environment like dev, we use console logger
-    consoleTransport.push(new CustomTransport({}))
+else {
+    consoleTransport.push(new winston.transports.Console({
+        format: format.combine(
+            // colorize({ all: true }),
+            colorize({
+                colors
+            }),
+            label({ label: '[LOGGER]' }),
+            timestamp({ format: 'YY-MM-DD HH:MM:SS' }),
+            printf(
+                (info) => {
+                    return  `${info.timestamp} ${info.level}: ${info.message}`
+                }
+            ),
+        )
+    }))
 }
+//
+// addColors({
+//     info: "grey",
+//     warn: 'italic yellow',
+//     error: 'bold red',
+//     debug: 'green',
+// })
 
 export const Log = winston.createLogger({
     level: 'info',

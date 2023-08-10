@@ -28,38 +28,6 @@ const workflowProcessStatusSchema = new mongoose.Schema<IWorkflowProcessStatusMo
     timestamp: Date                                             // Timestamp -> data will expire at some point (Like a week.)
 });
 
-const WorkflowStatusModel = mongoose.model<IWorkflowProcessStatusModel>("workflow_process_status",workflowProcessStatusSchema);
-
-
-class WorkflowStatus extends WorkflowStatusModel implements IWorkflowProcessStatusModel{
-
-
-    public static findWorkflowById = async (workflowProcessStatusModel: IWorkflowProcessStatusModel, option: any): Promise<IWorkflowProcessStatusModel[]> => {
-        return await WorkflowStatus.find(WorkflowStatus.queryFromWorkflowStatus(workflowProcessStatusModel,option))!
-    }
-
-    public static queryFromWorkflowStatus = (workflowProcessStatusModel: IWorkflowProcessStatusModel, option: any = {}): any => {
-        return {
-            workflowId: workflowProcessStatusModel.workflowId,
-            processId: workflowProcessStatusModel.processId,
-            messageUid: workflowProcessStatusModel.messageUid,
-            userId: workflowProcessStatusModel.userId,
-            ...option
-        }
-    }
-
-    public static save = async (workflowProcessStatusModel:IWorkflowProcessStatusModel): Promise<void> => {
-        const newStatusModel = new WorkflowStatusModel({
-            message: workflowProcessStatusModel.message,
-            workflowId: workflowProcessStatusModel.workflowId,
-            processId: workflowProcessStatusModel.processId,
-            messageUid: workflowProcessStatusModel.messageUid,
-            userId: workflowProcessStatusModel.userId,
-            timestamp: workflowProcessStatusModel.timestamp
-        })
-
-        await newStatusModel.save()
-    }
-}
+const WorkflowStatus = mongoose.model<IWorkflowProcessStatusModel>("workflow_process_status",workflowProcessStatusSchema);
 
 export {WorkflowStatus}

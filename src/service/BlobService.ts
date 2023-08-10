@@ -7,7 +7,6 @@ dotenv.config();
 
 const azure_connection_string:string = process.env.AZURE_BLOB_CONNECTION_STRING ?? ""
 
-
 @singleton()
 export class BlobService {
 

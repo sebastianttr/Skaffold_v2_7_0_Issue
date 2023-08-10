@@ -1,12 +1,6 @@
 import {IWorkflowProcessModel} from "./WorkflowProcessModel";
+import {WorkflowStates} from "./enums/WorkflowStates";
 
-enum WorkflowStates {
-    IDLE,
-    RUN,
-    DONE,
-    MISSING_DATA,
-    EXCEPTION,
-}
 
 interface IWorkflowStateModel {       // this will be stored in the mongo database ... it remembers te current state of the workflow
     currentState: WorkflowStates;   // Workflow states
@@ -20,4 +14,4 @@ interface IWorkflowStateModel {       // this will be stored in the mongo databa
     processes?: IWorkflowProcessModel[];
 }
 
-export {IWorkflowStateModel, WorkflowStates}
+export {IWorkflowStateModel}
