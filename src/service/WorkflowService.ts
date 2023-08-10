@@ -495,18 +495,18 @@ export default class WorkflowService{
     private notifyUser(workflowUserMessage: IWorkflowUserMessageModel) {
         //Log.info(JSON.stringify(workflowUserMessage))
 
-        // this.kafkaMessageService.send(
-        //     JSON.stringify(process),
-        //     config.processMapping["User"].topic,
-        //     "",
-        //     0,
-        //     {})
-        //     .then(() => {
-        //         //Log.info("Sent kafka message")
-        //     })
-        //     .catch(e => {
-        //         Log.error(e.stack)
-        //     })
+        this.kafkaMessageService.send(
+            JSON.stringify(process),
+            config.processMapping["User"].topic,
+            "",
+            0,
+            {})
+            .then(() => {
+                //Log.info("Sent kafka message")
+            })
+            .catch(e => {
+                Log.error(e.stack)
+            })
     }
 
     private sendProcessMessageOverKafka(process: IWorkflowProcessModel) {
