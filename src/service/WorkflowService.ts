@@ -8,7 +8,7 @@ import {KafkaIncomingRecord} from "../util/kafkaincoming";
 import objectSize from "object-sizeof";
 import {WorkflowStatus} from "../entity/WorkflowStatus";
 import {Exception} from "tsoa";
-import {ObjectHelper} from "../entity/ObjectHelper";
+import {ObjectHelper} from "../helper/ObjectHelper";
 import {WorkflowProcessRepository} from "../repository/WorkflowProcessRepository";
 import {WorkflowStateRepository} from "../repository/WorkflowStateRepository";
 import {IWorkflowStateModel} from "../model/WorkflowStateModel";
@@ -74,6 +74,7 @@ export default class WorkflowService{
 
         // check if the params needed for status are not null, undefined or empty string
         if(!ObjectHelper.getKeyListOfFalsyValues(workflowProcessStatusModel).length){
+
             // Remove old status messages because we cannot have statuses with the same workflowId, processId an status count -> bad for process time estimation
             await this.workflowStatusRepository.removeOldStatuses(workflowProcessStatusModel)
 
@@ -493,10 +494,8 @@ export default class WorkflowService{
     }
 
     private notifyUser(workflowUserMessage: IWorkflowUserMessageModel) {
-        //Log.info(JSON.stringify(workflowUserMessage))
-
         this.kafkaMessageService.send(
-            JSON.stringify(process),
+            JSON.stringify(JSON.stringify(workflowUserMessage)),
             config.processMapping["User"].topic,
             "",
             0,

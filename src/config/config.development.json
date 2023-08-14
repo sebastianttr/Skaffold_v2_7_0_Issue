@@ -14,6 +14,8 @@
         },
         "Workflow Element 3": {
             "topic": "dev.workflow.element3"
+        },"User": {
+            "topic": "dev.user.messaging"
         }
     }
 }

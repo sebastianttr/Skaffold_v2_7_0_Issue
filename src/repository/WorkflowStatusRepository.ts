@@ -44,7 +44,6 @@ export class WorkflowStatusRepository {
         // then remove all the statuses by workflowId and processId
         if(oldStatuses.length >= 1 && workflowProcessStatusModel.message.statusCount == 0){
             // remove all with given workflowId and processId
-            Log.info(WorkflowStatusRepository.queryFromWorkflowStatus(workflowProcessStatusModel))
             await WorkflowStatus.remove(WorkflowStatusRepository.queryFromWorkflowStatus(workflowProcessStatusModel))
         }
     }
