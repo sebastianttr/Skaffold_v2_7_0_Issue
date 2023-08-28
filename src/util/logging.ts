@@ -16,8 +16,6 @@ const getFormatedDate = () => {
     let month = leadingZero(date.getMonth()+1);
     let year = leadingZero(date.getFullYear());
 
-    // ${day}/${month}/${year}
-
     return `${hour}:${minute}:${seconds}`;
 }
 
@@ -81,21 +79,8 @@ export class Log{
         return `${fileName}`
     }
 
-    static info(infoObject: any){
-        //Log.getCallerFileAndLine(new Error().stack || "")
-        LogWinston.info(` [${Log.getCallerFileAndLine(new Error().stack || "")}] : ${infoObject}`)
-    }
-
-    static warn(infoObject: any){
-        LogWinston.warn(` [${Log.getCallerFileAndLine(new Error().stack || "")}] : ${infoObject}`)
-    }
-
-    static error(infoObject: any) {
-        LogWinston.error(` [${Log.getCallerFileAndLine(new Error().stack || "")}] : ${infoObject}`)
-    }
-
-    static debug(infoObject: any) {
-        LogWinston.debug(` [${Log.getCallerFileAndLine(new Error().stack || "")}] : ${infoObject}`)
-    }
-
+    static info = (infoObject: any) => LogWinston.info(` [${Log.getCallerFileAndLine(new Error().stack || "")}] : ${infoObject}`)
+    static warn = (infoObject: any) => LogWinston.warn(` [${Log.getCallerFileAndLine(new Error().stack || "")}] : ${infoObject}`)
+    static error = (infoObject: any) => LogWinston.error(` [${Log.getCallerFileAndLine(new Error().stack || "")}] : ${infoObject}`)
+    static debug = (infoObject: any) => LogWinston.debug(` [${Log.getCallerFileAndLine(new Error().stack || "")}] : ${infoObject}`)
 }

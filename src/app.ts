@@ -1,7 +1,6 @@
 import "reflect-metadata";
 import express from 'express';
 import {Inject} from "./util/injection";
-import cors from "cors";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import * as swaggerUi from 'swagger-ui-express';
@@ -13,6 +12,8 @@ import {RegisterRoutes} from "../dist/routes";
 import {Exception} from "tsoa";
 import {Log} from "./util/logging";
 import {KafkaMessageProcessor} from "./processor/KafkaMessageProcessor";
+import cors from "cors";
+
 
 const app = express();
 const port = 3000;
@@ -24,10 +25,7 @@ const blobService: BlobService = Inject(BlobService);
 const kafkaMessageProcessor: KafkaMessageProcessor = Inject(KafkaMessageProcessor);
 
 (async () => {
-    app.use(cors({
-            origin: '*',
-            optionsSuccessStatus: 200,
-        })
+    app.use(cors()
     );
 
     app.use(express.json());
