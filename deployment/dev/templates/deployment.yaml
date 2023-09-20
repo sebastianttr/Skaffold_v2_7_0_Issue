@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: skaffold-reporducer
+  name: skaffold-reproducer
   namespace: development
   labels:
-    app: skaffold-reporducer
-    app.kubernetes.io/name: skaffold-reporducer
-    helm.sh/chart: skaffold-reporducer-1-1.0.0
+    app: skaffold-reproducer
+    app.kubernetes.io/name: skaffold-reproducer
+    helm.sh/chart: skaffold-reproducer-1-1.0.0
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: skaffold-reporducer
+      app: skaffold-reproducer
       version: v1
-      app.kubernetes.io/name: skaffold-reporducer
+      app.kubernetes.io/name: skaffold-reproducer
   template:
     metadata:
       labels:
-        app: skaffold-reporducer
+        app: skaffold-reproducer
         version: v1
-        app.kubernetes.io/name: skaffold-reporducer
+        app.kubernetes.io/name: skaffold-reproducer
       annotations:
         deploymentTime: "20230920111647"
     spec:
@@ -32,8 +32,8 @@ spec:
         development-nodes: "true"
         kubernetes.io/os: linux
       containers:
-        - name: skaffold-reporducer
-          image: "gitlab.quanticfinancial.com:5050/microservice/q1-workflow-service-1/dev-reprod:latest"
+        - name: skaffold-reproducer
+          image: "gitlab.quanticfinancial.com:5050/workflow/q1-workflow-service/dev-reprod:latest"
           imagePullPolicy: Always
           resources:
             limits:
