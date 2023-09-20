@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: skaffold-reporducer
+  namespace: development
+  labels:
+    app: skaffold-reporducer
+    app.kubernetes.io/name: skaffold-reporducer
+    helm.sh/chart: skaffold-reporducer-1-1.0.0
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - name: skaffold-reporducer
+      port: 3000
+      targetPort: 3000
+  selector:
+    app: skaffold-reporducer

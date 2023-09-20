@@ -1,12 +1,12 @@
 import winston, {format} from "winston";
 
-const { combine, colorize, label, timestamp, json, prettyPrint, printf, simple } = format;
+const { colorize, label, timestamp, printf } = format;
 
 const leadingZero = (num:number):string => {
     return (num < 10) ? '0' + num : String(num)
 }
 
-const getFormatedDate = () => {
+const getFormattedDate = () => {
     const date: Date = new Date();
     let hour = leadingZero(date.getHours());
     let minute = leadingZero(date.getMinutes());
@@ -62,7 +62,7 @@ const LogWinston = winston.createLogger({
 export class Log{
 
     // only file name because the line numbering is broken.
-    private static getCallerFileAndLine(stack: string):string {
+    private static getCallerFileAndLine(stack: string): string {
         // get the stack lines.
         const stackLines: string[] = new Error().stack!.split("\n")
 
@@ -79,8 +79,27 @@ export class Log{
         return `${fileName}`
     }
 
-    static info = (infoObject: any) => LogWinston.info(` [${Log.getCallerFileAndLine(new Error().stack || "")}] : ${infoObject}`)
-    static warn = (infoObject: any) => LogWinston.warn(` [${Log.getCallerFileAndLine(new Error().stack || "")}] : ${infoObject}`)
-    static error = (infoObject: any) => LogWinston.error(` [${Log.getCallerFileAndLine(new Error().stack || "")}] : ${infoObject}`)
-    static debug = (infoObject: any) => LogWinston.debug(` [${Log.getCallerFileAndLine(new Error().stack || "")}] : ${infoObject}`)
+    static info = (infoObject: any, ...args: any[]) => LogWinston.info(Log.logFormat(infoObject, ...args))
+    static warn = (infoObject: any, ...args: any[]) => LogWinston.warn(Log.logFormat(infoObject, ...args))
+    static error = (infoObject: any, ...args: any[]) => LogWinston.error(Log.logFormat(infoObject, ...args))
+    static debug = (infoObject: any, ...args: any[]) => LogWinston.debug(Log.logFormat(infoObject, ...args))
+
+    static logFormat = (infoObject: any, ...args: any[]): string => {
+        if(args.length){
+            let argString: string = "";
+
+            for(const arg of args){
+                if(typeof arg == "object"){
+                    argString = argString.concat(argString," " + JSON.stringify(arg))
+                }
+                else
+                    argString = argString.concat(argString," " + arg)
+            }
+
+            return `[${Log.getCallerFileAndLine(new Error().stack || "")}] : ${infoObject}${argString}`
+        }
+        else {
+            return `[${Log.getCallerFileAndLine(new Error().stack || "")}] : ${infoObject}`
+        }
+    }
 }

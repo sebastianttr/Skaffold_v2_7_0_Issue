@@ -1,19 +1,18 @@
-import { Route, Request, Delete} from "tsoa";
+import {Route, Request, Get} from "tsoa";
 import {Inject} from "../util/injection";
 import {Controller} from "@tsoa/runtime";
-import BlobService from "../service/BlobService";
+import BasicService from "../service/BasicService";
+import {Log} from "../util/logging";
 
 @Route("api/v1/basic")
 export class BasicController extends Controller {
 
-    private blobService: BlobService = Inject(BlobService)
+    private basicService: BasicService = Inject(BasicService)
 
-    @Delete("blobs")
-    public deleteAllBlobs(@Request() req: Express.Request): string{
-        this.blobService.getBlobs().then(blobs => {
-            this.blobService.deleteBlobs(blobs)
-        })
-        return "Deleted the blob list. "
+    @Get("model")
+    public getModel(@Request() req: Express.Request): Promise<any> {
+        Log.info("New incoming request")
+        return this.basicService.handle(req)
     }
 
 }
